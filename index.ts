@@ -1,23 +1,51 @@
 import Graph from "./src/Graph";
 import { getRandomVertex, repeat } from "./src/utils";
 
-const g = new Graph({ directed: true });
-const VERTEX_COUNT = 100;
-const MAX_EDGE_COUNT = VERTEX_COUNT * VERTEX_COUNT;
+export function createSnapshots({
+  vertexCount,
+  snapshotCount,
+  densityIndex,
+}:{
+  vertexCount: number,
+  snapshotCount: number,
+  densityIndex: number
+}) {
+  const g = new Graph({ directed: false });
 
-repeat(() => g.addVertex(), VERTEX_COUNT);
+  const MAX_EDGE_COUNT = vertexCount * vertexCount;
 
-repeat(() => g.addEdge(getRandomVertex(VERTEX_COUNT), getRandomVertex(VERTEX_COUNT)), Math.random() * MAX_EDGE_COUNT);
+  repeat(() => g.addVertex(), vertexCount);
 
-g.takeSnapshot();
+// repeat(() => g.addEdge(getRandomVertex(VERTEX_COUNT), getRandomVertex(VERTEX_COUNT)), Math.random() * VERTEX_COUNT);
 
-repeat(() => {
-  g.changeEdge(getRandomVertex(VERTEX_COUNT), getRandomVertex(VERTEX_COUNT));
-  g.changeEdge(getRandomVertex(VERTEX_COUNT), getRandomVertex(VERTEX_COUNT));
-  g.changeEdge(getRandomVertex(VERTEX_COUNT), getRandomVertex(VERTEX_COUNT));
   g.takeSnapshot();
-}, 1000);
 
-// g.printSnapshots();
+  repeat(() => {
+    for(let i = 0; i < Math.random() * MAX_EDGE_COUNT; i++) {
+      if(i % densityIndex === 0)
+        g.addRandomEdge(getRandomVertex(vertexCount), getRandomVertex(vertexCount));
+      else
+        g.removeRandomEdge(getRandomVertex(vertexCount), getRandomVertex(vertexCount));
+    }
+    g.takeSnapshot();
+  }, snapshotCount);
 
-export const snapshots = g.getSnapshots();
+  return {
+    snapshots: g.getSnapshots(),
+    snapshotStrings: g.snapshotsToString(),
+    snapshotMatrices: g.getSnapshots(true),
+  };
+}
+
+export function createFromSnapshots(snapshots: number[][][]) {
+  const g = new Graph({
+    data: snapshots[0],
+    snapshots,
+  });
+
+  return {
+    snapshots: g.getSnapshots(),
+    snapshotStrings: g.snapshotsToString(),
+    snapshotMatrices: g.getSnapshots(true),
+  };
+}

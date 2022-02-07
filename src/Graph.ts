@@ -4,20 +4,26 @@ class Graph {
   private readonly directed: boolean;
 
   constructor({
-    graph,
+    data,
+    snapshots,
     directed
   } : {
-    graph?: Graph,
+    data?: number[][],
+    snapshots?: number[][][],
     directed?: boolean,
   }) {
     this.directed = directed ?? false;
-    if(graph?.data) {
-      for(let  i = 0; i < graph.data.length; i++) {
+    if(data) {
+      for(let i = 0; i < data.length; i++) {
         this.data.push([]);
-        for(let j = 0; j < graph.data[i].length; j++) {
-          this.data[i].push(graph.data[i][j]);
+        for(let j = 0; j < data[i].length; j++) {
+          this.data[i].push(data[i][j]);
         }
       }
+    }
+
+    if(snapshots) {
+      this.snapshots = snapshots.map((snapshot: number[][]) => new Graph({ data: snapshot }));
     }
   }
 
@@ -60,11 +66,22 @@ class Graph {
     this.data[v1][v2] = +!this.data[v1][v2];
   }
 
-  takeSnapshot() {
-    this.snapshots.push(new Graph({ graph: this }));
+  addRandomEdge(v1: number, v2: number) {
+    this.data[v1][v2] = 1;
   }
 
-  getSnapshots() {
+  removeRandomEdge(v1: number, v2: number) {
+    this.data[v1][v2] = 0;
+  }
+
+  takeSnapshot() {
+    this.snapshots.push(new Graph({ data: this.data }));
+  }
+
+  getSnapshots(isMatrix?: boolean) {
+    if(isMatrix) {
+      return this.snapshots.map(item => item.data);
+    }
     return this.snapshots.map(snapshot => ({
       vertices: snapshot.getVertices(),
       edges: snapshot.getEdges(),
@@ -75,8 +92,8 @@ class Graph {
     console.log(this.toString());
   }
 
-  printSnapshots() {
-    this.snapshots.forEach(snapshot => snapshot.print());
+  snapshotsToString() {
+    return this.snapshots.map(snapshot => snapshot.toString());
   }
 
   toString() {

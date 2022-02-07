@@ -1,3 +1,5 @@
+// stolen ugly code, do not pay attention :)
+
 // Copyright 2021 Observable, Inc.
 // Released under the ISC license.
 // https://observablehq.com/@d3/disjoint-force-directed-graph
@@ -47,7 +49,7 @@ function ForceGraph({
   const color = nodeGroup == null ? null : d3.scaleOrdinal(nodeGroups, colors);
 
   // Construct the forces.
-  const forceNode = d3.forceManyBody();
+  const forceNode = d3.forceManyBody().strength(-200);
   const forceLink = d3.forceLink(links).id(({index: i}) => N[i]);
   if (nodeStrength !== undefined) forceNode.strength(nodeStrength);
   if (linkStrength !== undefined) forceLink.strength(linkStrength);
@@ -136,9 +138,6 @@ function ForceGraph({
   return Object.assign(svg.node(), {
     scales: {color},
     update({nodes, links}) {
-
-      // Make a shallow copy to protect against mutation, while
-      // recycling old nodes to preserve position and velocity.
       const old = new Map(node.data().map(d => [d.id, d]));
       nodes = nodes.map(d => Object.assign(old.get(d) || {}, d));
       links = links.map(d => Object.assign({}, d));
@@ -157,7 +156,7 @@ function ForceGraph({
       simulation.nodes(nodes);
       simulation.force("link").links(links);
       simulation.alpha(1).restart().tick();
-      ticked(); // render now!
+      ticked();
     }
   });
 }
