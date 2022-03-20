@@ -29,3 +29,7 @@ document.getElementById('upload').onclick = () => {
 document.getElementById('playToggle').onclick = () => {
   playToggled();
 }
+
+document.getElementById('downloadInformed').onclick = () => {
+  downloadInformed();
+}

@@ -10,6 +10,8 @@ let snapshotsData = createSnapshots({
   densityIndex: 10,
 });
 
+// let infoSnapshots = createInfoSnapshots(snapshotsData);
+
 app.use(express.json({limit: '50mb'}))
 
 app.get('/snapshots', (req, res) => {

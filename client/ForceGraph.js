@@ -15,7 +15,7 @@ function ForceGraph({
   nodeStroke = "#fff", // node stroke color
   nodeStrokeWidth = 1.5, // node stroke width, in pixels
   nodeStrokeOpacity = 1, // node stroke opacity
-  nodeRadius = 5, // node radius, in pixels
+  nodeRadius = 6, // node radius, in pixels
   nodeStrength,
   linkSource = ({source}) => source, // given d in links, returns a node identifier string
   linkTarget = ({target}) => target, // given d in links, returns a node identifier string
@@ -79,7 +79,7 @@ function ForceGraph({
   if (W) link.attr("stroke-width", ({index: i}) => W[i]);
 
   node = svg.append("g")
-    .attr("fill", nodeFill)
+    // .attr("fill", nodeFill)
     .attr("stroke", nodeStroke)
     .attr("stroke-opacity", nodeStrokeOpacity)
     .attr("stroke-width", nodeStrokeWidth)
@@ -87,9 +87,10 @@ function ForceGraph({
     .data(nodes)
     .join("circle")
     .attr("r", nodeRadius)
+    .attr("id", ({index: i}) => `node-${i}`)
     .call(drag(simulation));
 
-  if (G) node.attr("fill", ({index: i}) => color(G[i]));
+  // if (G) node.attr("fill", ({index: i}) => color(G[i]));
   if (T) node.append("title").text(({index: i}) => T[i]);
 
   // Handle invalidation.
@@ -145,7 +146,8 @@ function ForceGraph({
       node = node
         .data(nodes, d => d)
         .join(enter => enter.append("circle")
-          .attr("r", 5)
+          .attr("r", 6)
+          .attr("id", d => `node-${d.id}`)
           .call(drag(simulation))
           .call(node => node.append("title").text(d => d.id)));
 

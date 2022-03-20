@@ -2,9 +2,16 @@ let drawInterval;
 let storedSnapshots;
 let lastSnapshotIndex = 0;
 let previousSelectedTimelineItem;
+let vertices = [];
 const playText = 'Play';
 const pauseText = 'Pause';
 const BASE_URL = 'http://localhost:3000';
+const giveInfo = [];
+const distributionsData = {
+  infoGiving: [],
+  prevInformedVertices: 0,
+};
+
 
 function calculateConnectionPercentage (graph) {
   const arr = new Array(graph.vertices.length).fill(0);
@@ -76,6 +83,8 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
     nodeTitle: d => d,
     width: window.innerWidth / 3 * 2,
     height: window.innerHeight / 3 * 2,
+    nodeStrokeWidth: 2,
+    linkStrokeWidth: 1,
   });
 
   const updateBarPlot = BarPlot(calculateDegrees(snapshots[snapshotIndex]));
@@ -84,12 +93,34 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
 
   setupTimeline(snapshots);
 
+  vertices = snapshots[snapshotIndex].vertices.map(vertex => ({id: vertex, hasInfo: false}));
+  vertices[0].hasInfo = true;
+
+
+  let colorMap = {};
   drawInterval = setInterval(() => {
     if(!snapshots[snapshotIndex]) {
       pause();
       lastSnapshotIndex = 0;
       return;
     }
+
+
+    //considering undirected graph
+    snapshots[snapshotIndex].edges.forEach(edge => {
+      // if(vertices[edge.source].hasInfo && !vertices[edge.target].hasInfo){
+      //   giveInfo.push(edge.target);
+      // }
+      // if(vertices[edge.target].hasInfo && !vertices[edge.source].hasInfo) {
+      //   giveInfo.push(edge.source);
+      // }
+      if(vertices[edge.target].hasInfo && !vertices[edge.source].hasInfo){
+        colorMap[edge.target] = edge.source;
+      }
+      if(vertices[edge.source].hasInfo && !vertices[edge.target].hasInfo){
+        colorMap[edge.source] = edge.target;
+      }
+    });
 
     document.getElementById("snapshotId").innerHTML = `${snapshotIndex}`;
     document.getElementById("connectionPercentage").innerText = `${calculateConnectionPercentage(snapshots[snapshotIndex]).toFixed(2)}%`;
@@ -100,9 +131,39 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
     });
     updateBarPlot(calculateDegrees(snapshots[snapshotIndex]));
 
+    //
+    // giveInfo.forEach(vertexIndex => vertices[vertexIndex].hasInfo = true);
+    // giveInfo.length = 0;
+    //////////
+    // console.log(giveInfo);
+    // while(giveInfo[0] && giveInfo[0].hasInfo) {
+    //   giveInfo.shift();
+    // }
+    // if(vertices[giveInfo[0]]) {
+    //   vertices[giveInfo[0]].hasInfo = true;
+    //   giveInfo.shift();
+    // }
+    //////
+
+    // console.log(colorMap)
+    Object.values(colorMap).forEach(vertexIndex => vertices[vertexIndex].hasInfo = true);
+
+    vertices.forEach(vertex => {
+      document.getElementById(`node-${vertex.id}`).setAttribute('fill', vertex.hasInfo? '#42aa9d': 'black');
+      // document.getElementById(`node-${vertex.id}`).setAttribute('fill', vertex.hasInfo? '#42aa9d': 'black');
+      // document.getElementById(`node-${vertex.id}`).setAttribute('stroke', vertex.hasInfo? 'black': 'white');
+    })
+
+    const informedVertices = vertices.reduce((acc, vertex) => acc + Number(vertex.hasInfo), 0) ;
+    const informationPercentage = informedVertices / vertices.length * 100;
+    distributionsData.infoGiving.push([distributionsData.infoGiving.length, informedVertices - distributionsData.prevInformedVertices, informedVertices]);
+    distributionsData.prevInformedVertices = informedVertices;
+    document.getElementById('informedVertices').innerText = document.getElementById('informedVertices').innerText + ' ' + informationPercentage.toFixed(2) + '%';
+    // document.getElementById('informedVerticesOne').innerText = +document.getElementById('informedVerticesOne').innerText.split(' ').pop()
     snapshotIndex++;
+    colorMap = {};
     lastSnapshotIndex = snapshotIndex;
-  }, 200)
+  }, 500)
 }
 
 function clearGraph() {
@@ -140,6 +201,19 @@ function downloadCurrentGraph() {
 
       document.body.removeChild(element);
     })
+}
+
+function downloadInformed() {
+  const element = document.createElement('a');
+  element.setAttribute('href', 'data:text/json;charset=utf-8,' + encodeURIComponent(distributionsData.infoGiving.map(row => row.toString()).join('\n')));
+  element.setAttribute('download', 'informed_vertices.csv');
+
+  element.style.display = 'none';
+  document.body.appendChild(element);
+
+  element.click();
+
+  document.body.removeChild(element);
 }
 
 function uploadFile() {

@@ -67,7 +67,7 @@ body {
     border-radius: 8px;
 }
 .outdated {
-    color: #BD5358;
+    color: #fd4673;
 }
 
 #loading {
@@ -156,7 +156,7 @@ body {
 }
 
 #timeline .timeline-item.active {
-    background: #81b885;
+    background: #42aa9d;
 }
 
 #timeline .timeline-item:nth-child(10n + 2) {
