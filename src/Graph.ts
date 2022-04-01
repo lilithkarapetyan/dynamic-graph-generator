@@ -1,43 +1,50 @@
+const { uniqueNamesGenerator, adjectives, colors, animals } = require('unique-names-generator');
+
+
 class Graph {
   private readonly data: number[][] = [];
   private readonly snapshots: Graph[] = [];
   private readonly directed: boolean;
+  private readonly name: string = '';
 
   constructor({
     data,
     snapshots,
-    directed
-  } : {
+    directed,
+    name,
+  }: {
     data?: number[][],
     snapshots?: number[][][],
     directed?: boolean,
+    name?: string;
   }) {
     this.directed = directed ?? false;
+    this.name = name || uniqueNamesGenerator({ dictionaries: [adjectives, colors, animals] });
 
-    if(data) {
-      for(let i = 0; i < data.length; i++) {
+    if (data) {
+      for (let i = 0; i < data.length; i++) {
         this.data.push([]);
-        for(let j = 0; j < data[i].length; j++) {
+        for (let j = 0; j < data[i].length; j++) {
           this.data[i].push(data[i][j]);
         }
       }
     }
 
-    if(snapshots) {
+    if (snapshots) {
       this.snapshots = snapshots.map((snapshot: number[][]) => new Graph({ data: snapshot }));
     }
   }
 
   addEdge(v1: number, v2: number, weight: number = 1) {
     this.data[v1][v2] = weight;
-    if(!this.directed) {
+    if (!this.directed) {
       this.data[v2][v1] = weight;
     }
   }
 
   clearEdges() {
-    for(let i = 0; i < this.data.length; i++) {
-      for(let j = 0; j < this.data[i].length; j++) {
+    for (let i = 0; i < this.data.length; i++) {
+      for (let j = 0; j < this.data[i].length; j++) {
         this.data[i][j] = 0;
       }
     }
@@ -52,9 +59,9 @@ class Graph {
   getEdges() {
     const result = [];
 
-    for(let i = 0; i < this.data.length; i++) {
-      for(let j = 0; j < this.data[i].length; j++) {
-        if(!this.data[i][j]) continue;
+    for (let i = 0; i < this.data.length; i++) {
+      for (let j = 0; j < this.data[i].length; j++) {
+        if (!this.data[i][j]) continue;
 
         result.push({
           source: i,
@@ -86,8 +93,11 @@ class Graph {
     this.snapshots.push(new Graph({ data: this.data }));
   }
 
+  getName() {
+    return this.name;
+  }
   getSnapshots(isMatrix?: boolean) {
-    if(isMatrix) {
+    if (isMatrix) {
       return this.snapshots.map(item => item.data);
     }
     return this.snapshots.map(snapshot => ({

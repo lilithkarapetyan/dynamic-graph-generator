@@ -6,12 +6,11 @@ document.getElementById('download').onclick = () => {
     .finally(() => setLoading(false));
 };
 
-document.getElementById('print').onclick = () => {
-  setLoading(true);
-  printCurrentGraph()
-    .then(() => console.log('Successfully printed'))
-    .catch(() => console.log('Print failed'))
-    .finally(() => setLoading(false));
+document.getElementById('unicastSwitcher').onchange = (event) => {
+  const isUnicast = document.getElementById('unicastSwitcher').checked;
+  vertexSnapshots[lastSnapshotIndex].forEach(vertex => {
+    document.getElementById(`node-${vertex.id}`).setAttribute('fill', (isUnicast ? (vertex.hasInfo ? '#42aa9d' : 'black') : (vertex.hasBroadInfo ? '#425caa' : 'black')));
+  });
 }
 
 document.getElementById('generate').onclick = () => {

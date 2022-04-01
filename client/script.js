@@ -1,31 +1,31 @@
 let drawInterval;
 let storedSnapshots;
+let storedDetails;
 let lastSnapshotIndex = 0;
 let previousSelectedTimelineItem;
-let vertices = [];
+let vertexSnapshots = [];
 const playText = 'Play';
 const pauseText = 'Pause';
 const BASE_URL = 'http://localhost:3000';
-const giveInfo = [];
 const distributionsData = {
-  infoGiving: [],
-  prevInformedVertices: 0,
+  info: [],
+  prevUnicastVertices: 0,
+  prevBroadcastVertices: 0,
 };
 
-
-function calculateConnectionPercentage (graph) {
+function calculateIsolationPercentage(graph) {
   const arr = new Array(graph.vertices.length).fill(0);
-  for(let i = 0; i < graph.edges.length; i++) {
+  for (let i = 0; i < graph.edges.length; i++) {
     arr[graph.edges[i].source] = 1;
     arr[graph.edges[i].target] = 1;
   }
 
-  return arr.reduce((acc, item) => acc + item, 0) / arr.length * 100;
+  return 100 - arr.reduce((acc, item) => acc + item, 0) / arr.length * 100;
 }
 
-function calculateDegrees (graph) {
-  const arr = new Array(graph.vertices.length).fill(0).map((_, index) => ({value: 0, index}));
-  for(let  i = 0; i < graph.edges.length; i++) {
+function calculateDegrees(graph) {
+  const arr = new Array(graph.vertices.length).fill(0).map((_, index) => ({ value: 0, index }));
+  for (let i = 0; i < graph.edges.length; i++) {
     arr[graph.edges[i].source].value++;
     arr[graph.edges[i].target].value++;
   }
@@ -36,7 +36,7 @@ function calculateDegrees (graph) {
 function setupTimeline(snapshots) {
   const timelineDiv = document.getElementById('timeline');
 
-  if(timelineDiv.children.length === snapshots.length + 1) {
+  if (timelineDiv.children.length === snapshots.length + 1) {
     return;
   }
 
@@ -45,11 +45,13 @@ function setupTimeline(snapshots) {
   const timelineItemClick = (e) => {
     lastSnapshotIndex = +e.target.getAttribute('data-index');
 
-    if(previousSelectedTimelineItem) {
+    if (previousSelectedTimelineItem) {
       previousSelectedTimelineItem.classList.remove('active');
     }
     previousSelectedTimelineItem = e.target;
     previousSelectedTimelineItem.classList.add('active');
+    play();
+    pause()
   }
 
   snapshots.forEach((_, index) => {
@@ -64,18 +66,18 @@ function setupTimeline(snapshots) {
 
 function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
   let chart;
+  let vertices;
   let snapshots = newSnapshots || storedSnapshots;
   let snapshotIndex = initialSnapshotIndex;
 
-  if(snapshots) {
+  if (snapshots) {
     storedSnapshots = snapshots;
   }
 
-  distributionsData.infoGiving = [];
-  distributionsData.prevInformedVertices = 0;
+  generateVertexSnapshots();
+
   document.getElementById('snapshotCountNumber').innerText = snapshots.length;
   document.getElementById('vertexCountNumber').innerText = snapshots[0].vertices.length;
-  document.getElementById('informedVertices').innerText = '-';
 
   chart && document.getElementById("scene").removeChild(chart);
   chart = ForceGraph({
@@ -90,127 +92,60 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
     linkStrokeWidth: 1,
   });
 
-  const updateBarPlot = BarPlot(calculateDegrees(snapshots[snapshotIndex]));
-
   document.getElementById("scene").appendChild(chart);
 
   setupTimeline(snapshots);
-
-  vertices = snapshots[snapshotIndex].vertices.map(vertex => ({id: vertex, hasInfo: false}));
-  vertices[0].hasInfo = true;
-
-
-  let colorMap = {};
-  drawInterval = setInterval(() => {
-    if(!snapshots[snapshotIndex]) {
+  function a() {
+    if (!snapshots[snapshotIndex] || !vertexSnapshots[snapshotIndex]) {
       pause();
       lastSnapshotIndex = 0;
       return;
     }
 
-
-    //considering undirected graph
-    snapshots[snapshotIndex].edges.forEach(edge => {
-      // if(vertices[edge.source].hasInfo && !vertices[edge.target].hasInfo){
-      //   giveInfo.push(edge.target);
-      // }
-      // if(vertices[edge.target].hasInfo && !vertices[edge.source].hasInfo) {
-      //   giveInfo.push(edge.source);
-      // }
-      if(vertices[edge.target].hasInfo && !vertices[edge.source].hasInfo){
-        if(!Object.values(colorMap).includes(edge.source))
-          colorMap[edge.target] = edge.source;
-      }
-      if(vertices[edge.source].hasInfo && !vertices[edge.target].hasInfo){
-        if(!Object.values(colorMap).includes(edge.target))
-          colorMap[edge.source] = edge.target;
-      }
+    vertices = vertexSnapshots[snapshotIndex];
+    chart.update({
+      links: snapshots[snapshotIndex].edges,
     });
 
     document.getElementById("snapshotId").innerHTML = `${snapshotIndex}`;
-    document.getElementById("connectionPercentage").innerText = `${calculateConnectionPercentage(snapshots[snapshotIndex]).toFixed(2)}%`;
+    document.getElementById("isolationPercentage").innerText = `${calculateIsolationPercentage(snapshots[snapshotIndex]).toFixed(2)}%`;
 
-    chart.update({
-      nodes: snapshots[snapshotIndex].vertices,
-      links: snapshots[snapshotIndex].edges,
-    });
-    updateBarPlot(calculateDegrees(snapshots[snapshotIndex]));
-
-
-    // giveInfo.forEach(vertexIndex => vertices[vertexIndex].hasInfo = true);
-    // giveInfo.length = 0;
-    //////////
-    // console.log(giveInfo);
-    // while(giveInfo[0] && giveInfo[0].hasInfo) {
-    //   giveInfo.shift();
-    // }
-    // if(vertices[giveInfo[0]]) {
-    //   vertices[giveInfo[0]].hasInfo = true;
-    //   giveInfo.shift();
-    // }
-    //////
-
-    Object.values(colorMap).forEach(vertexIndex => vertices[vertexIndex].hasInfo = true);
-
+    const isUnicast = document.getElementById('unicastSwitcher').checked;
     vertices.forEach(vertex => {
-      document.getElementById(`node-${vertex.id}`).setAttribute('fill', vertex.hasInfo? '#42aa9d': 'black');
-      // document.getElementById(`node-${vertex.id}`).setAttribute('fill', vertex.hasInfo? '#42aa9d': 'black');
-      // document.getElementById(`node-${vertex.id}`).setAttribute('stroke', vertex.hasInfo? 'black': 'white');
+      document.getElementById(`node-${vertex.id}`).setAttribute('fill', (isUnicast ? (vertex.hasInfo ? '#42aa9d' : 'black') : (vertex.hasBroadInfo ? '#425caa' : 'black')));
     })
 
-    const informedVertices = vertices.reduce((acc, vertex) => acc + Number(vertex.hasInfo), 0) ;
-    const informationPercentage = informedVertices / vertices.length * 100;
-    distributionsData.infoGiving.push([distributionsData.infoGiving.length, informedVertices - distributionsData.prevInformedVertices, informedVertices, calculateConnectionPercentage(snapshots[snapshotIndex]), snapshots[snapshotIndex].edges.length / Math.pow(snapshots[snapshotIndex].vertices.length, 2) * 100 ]);
-    distributionsData.prevInformedVertices = informedVertices;
-    document.getElementById('informedVertices').innerText = document.getElementById('informedVertices').innerText + ' ' + informationPercentage.toFixed(2) + '%';
-    // document.getElementById('informedVerticesOne').innerText = +document.getElementById('informedVerticesOne').innerText.split(' ').pop()
     snapshotIndex++;
-    colorMap = {};
     lastSnapshotIndex = snapshotIndex;
-  }, 500)
+    drawStats();
+
+  }
+  a()
+  drawInterval = setInterval(() => a(), 500)
 }
 
 function clearGraph() {
   clearInterval(drawInterval);
+  document.getElementById('connectedRoundsUnicast').innerText = ' - '
+  document.getElementById('connectedRoundsBroadcast').innerText = ' - '
   document.getElementById('scene').innerHTML = '';
-  document.getElementById('degrees').innerHTML = '<svg width="700" height="400"></svg>'
 }
 
 function setLoading(isShowing) {
   const loading = document.getElementById('loading');
-  if(isShowing) {
+  if (isShowing) {
     loading.classList.add('visible');
     loading.classList.remove('hidden');
-  }else{
+  } else {
     loading.classList.add('hidden');
     loading.classList.remove('visible');
   }
 }
 
-function downloadCurrentGraph() {
-  return fetch(`${BASE_URL}/snapshots-matrix`)
-    .then(data => data.json())
-    .then(snapshots => {
-      const fileName = `Graph - ${(new Date()).toLocaleString()}.json`;
-      const fileContent = JSON.stringify(snapshots);
-
-      const element = document.createElement('a');
-      element.setAttribute('href', 'data:text/json;charset=utf-8,' + encodeURIComponent(fileContent));
-      element.setAttribute('download', fileName);
-
-      element.style.display = 'none';
-      document.body.appendChild(element);
-
-      element.click();
-
-      document.body.removeChild(element);
-    })
-}
-
 function downloadInformed() {
   const element = document.createElement('a');
-  element.setAttribute('href', 'data:text/json;charset=utf-8,index,dist,informed,connectedness,edges\n' + encodeURIComponent(distributionsData.infoGiving.map(row => row.toString()).join('\n')));
-  element.setAttribute('download', 'informed_vertices.csv');
+  element.setAttribute('href', generateStatsCSV());
+  element.setAttribute('download', `informed_vertices_${document.getElementById('graphName').innerText}.csv`);
 
   element.style.display = 'none';
   document.body.appendChild(element);
@@ -242,7 +177,7 @@ function uploadFile() {
 
       fetch(`${BASE_URL}/from-snapshots`, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ data: result })
       })
         .then(data => data.json())
@@ -253,25 +188,6 @@ function uploadFile() {
   }
 
   input.click()
-}
-
-function printCurrentGraph() {
-  return fetch(`${BASE_URL}/snapshots-string`)
-    .then(data => data.json())
-    .then(snapshots => {
-      snapshots.forEach((snapshot, index) => {
-        setTimeout(() => {
-          const div = document.createElement('div');
-          div.className = 'snapshot-output';
-          div.innerHTML = `<h4>${index}.</h4><pre>${snapshot}</pre>`;
-          document.getElementById('output').appendChild(div);
-        }, 0)
-      })
-
-      const lastPrintedDate = document.getElementById('lastPrintedDate');
-      lastPrintedDate.classList.remove('outdated');
-      lastPrintedDate.innerText = (new Date()).toLocaleString();
-    })
 }
 
 function play() {
@@ -286,40 +202,76 @@ function pause() {
   const playButton = document.getElementById('playToggle');
   playButton.innerText = playText;
   clearInterval(drawInterval);
+  drawStats()
   playButton.classList.remove('playing');
+}
+
+function drawStats() {
+  document.getElementById('linechart-broadcast').innerHTML = '';
+  document.getElementById('linechart-unicast').innerHTML = '';
+  document.getElementById('linechart-isolated').innerHTML = '';
+
+  const transformedData = distributionsData.info.map(each => {
+    const [index, broadcastSingle, broadcast, unicastSingle, unicast, isolated] = each;
+    return {
+      index,
+      broadcastSingle,
+      unicastSingle,
+      isolated,
+    }
+  })
+  drawLineChart({
+    data: transformedData,
+    containerId: 'linechart-broadcast',
+    xAxis: 'index',
+    yAxis: 'broadcastSingle'
+  })
+  drawLineChart({
+    data: transformedData,
+    containerId: 'linechart-unicast',
+    xAxis: 'index',
+    yAxis: 'unicastSingle'
+  })
+  drawLineChart({
+    data: transformedData,
+    containerId: 'linechart-isolated',
+    xAxis: 'index',
+    yAxis: 'isolated'
+  })
 }
 
 function playToggled() {
   const playButton = document.getElementById('playToggle');
 
-  if(playButton.innerText === pauseText) pause();
+  if (playButton.innerText === pauseText) pause();
   else play();
 }
 
-async function startNewGraph(snapshots) {
+async function startNewGraph(snapshotsInfo) {
   clearGraph();
   lastSnapshotIndex = 0;
-  await drawGraph(snapshots);
+  document.getElementById('graphName').innerText = snapshotsInfo.details.name;
+  storedDetails = snapshotsInfo.details;
+  await drawGraph(snapshotsInfo.snapshots);
   play();
-  document.getElementById('lastPrintedDate').classList.add('outdated');
 }
 
 function generateNewGraph() {
   setLoading(true);
 
   const vertexCount = document.getElementById('vertexCount').value;
-  const densityIndex = document.getElementById('densityIndex').value;
+  const probability = document.getElementById('probability').value;
   const snapshotCount = document.getElementById('snapshotCount').value;
 
   localStorage.setItem('vertexCount', vertexCount);
-  localStorage.setItem('densityIndex', densityIndex);
+  localStorage.setItem('probability', probability);
   localStorage.setItem('snapshotCount', snapshotCount);
 
   return fetch(`${BASE_URL}/snapshots`, {
     method: 'POST',
     body: JSON.stringify({
       vertexCount: +vertexCount,
-      densityIndex: +densityIndex,
+      probability: probability.includes('n') ? probability : +probability,
       snapshotCount: +snapshotCount,
     }),
     headers: {
@@ -327,20 +279,111 @@ function generateNewGraph() {
     }
   })
     .then(data => data.json())
-    .then(snapshots => startNewGraph(snapshots))
+    .then(snapshotsInfo => startNewGraph(snapshotsInfo))
     .finally(() => setLoading(false));
+}
+
+function generateVertexSnapshots() {
+  let infoMap = {};
+  let infoQueue = [];
+  distributionsData.info = [];
+  distributionsData.prevUnicastVertices = 0;
+  distributionsData.prevBroadcastVertices = 0;
+
+  const infoSnapshots = storedSnapshots.map(snapshot => (
+    snapshot.vertices.map((vertex, index) => ({
+      id: vertex, hasInfo: index === 0, hasBroadInfo: index === 0
+    }))
+  ));
+
+  storedSnapshots.forEach((snapshot, index) => {
+    const vertices = infoSnapshots[index];
+
+    if (infoSnapshots[index - 1]) {
+      vertices.forEach((vertex, vertexIndex) => {
+        vertex.hasInfo = infoSnapshots[index - 1][vertexIndex].hasInfo;
+        vertex.hasBroadInfo = infoSnapshots[index - 1][vertexIndex].hasBroadInfo;
+      })
+    }
+
+    snapshot.edges.forEach(edge => {
+      if (vertices[edge.source].hasBroadInfo && !vertices[edge.target].hasBroadInfo) {
+        infoQueue.push(edge.target);
+      }
+      if (vertices[edge.target].hasBroadInfo && !vertices[edge.source].hasBroadInfo) {
+        infoQueue.push(edge.source);
+      }
+      if (vertices[edge.target].hasInfo && !vertices[edge.source].hasInfo) {
+        if (!Object.values(infoMap).includes(edge.source))
+          infoMap[edge.target] = edge.source;
+      }
+      if (vertices[edge.source].hasInfo && !vertices[edge.target].hasInfo) {
+        if (!Object.values(infoMap).includes(edge.target))
+          infoMap[edge.source] = edge.target;
+      }
+    });
+
+    infoQueue.forEach(vertexIndex => vertices[vertexIndex].hasBroadInfo = true);
+    Object.values(infoMap).forEach(vertexIndex => vertices[vertexIndex].hasInfo = true);
+
+    const unicastVertices = vertices.reduce((acc, vertex) => acc + Number(vertex.hasInfo), 0);
+    const broadcastVertices = vertices.reduce((acc, vertex) => acc + Number(vertex.hasBroadInfo), 0);
+
+    if (unicastVertices == vertices.length && document.getElementById('connectedRoundsUnicast').innerText == '-') {
+      document.getElementById('connectedRoundsUnicast').innerText = index;
+    }
+
+    if (broadcastVertices == vertices.length && document.getElementById('connectedRoundsBroadcast').innerText == '-') {
+      document.getElementById('connectedRoundsBroadcast').innerText = index;
+    }
+
+    distributionsData.info.push([distributionsData.info.length, broadcastVertices - distributionsData.prevBroadcastVertices, broadcastVertices, unicastVertices - distributionsData.prevUnicastVertices, unicastVertices, calculateIsolationPercentage(snapshot)]);
+    distributionsData.prevUnicastVertices = unicastVertices;
+    distributionsData.prevBroadcastVertices = broadcastVertices;
+
+    infoMap = {};
+    infoQueue = [];
+  })
+
+  vertexSnapshots = infoSnapshots;
 }
 
 function setup() {
   setLoading(true);
   fetch(`${BASE_URL}/snapshots`)
     .then(data => data.json())
-    .then(snapshots => drawGraph(snapshots))
+    .then(snapshots => startNewGraph(snapshots))
     .finally(() => setLoading(false));
 
+  drawStats();
+
   document.getElementById('vertexCount').value = localStorage.getItem('vertexCount');
-  document.getElementById('densityIndex').value = localStorage.getItem('densityIndex');
+  document.getElementById('probability').value = localStorage.getItem('probability');
   document.getElementById('snapshotCount').value = localStorage.getItem('snapshotCount');
 }
 
 setup();
+
+function generateStatsCSV() {
+  return 'data:text/json;charset=utf-8,index,broadcastSingle,broadcast,unicastSingle,unicast,isolated\n' + encodeURIComponent(distributionsData.info.map(row => row.toString()).join('\n'));
+}
+
+function downloadCurrentGraph() {
+  return fetch(`${BASE_URL}/snapshots-matrix`)
+    .then(data => data.json())
+    .then(snapshots => {
+      const fileName = `Graph-${document.getElementById('graphName').innerText}.json`;
+      const fileContent = JSON.stringify({ snapshots, details: storedDetails });
+
+      const element = document.createElement('a');
+      element.setAttribute('href', 'data:text/json;charset=utf-8,' + encodeURIComponent(fileContent));
+      element.setAttribute('download', fileName);
+
+      element.style.display = 'none';
+      document.body.appendChild(element);
+
+      element.click();
+
+      document.body.removeChild(element);
+    })
+}

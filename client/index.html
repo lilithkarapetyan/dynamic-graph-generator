@@ -1,63 +1,90 @@
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Dynamic graph</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@200&family=Roboto:ital,wght@1,900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@200&family=Roboto:ital,wght@1,900&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<div id="content">
-    <div id="scene"></div>
-    <div id="degrees"><svg width="700" height="400"></svg></div>
-</div>
-<div id="info">
-    <p><span class="metric">Snapshot Id: </span><span class="metric-value" id="snapshotId"> - </span></p>
-    <p><span class="metric">Snapshot Count: </span><span class="metric-value" id="snapshotCountNumber"> - </span></p>
-    <p><span class="metric">Vertex Count: </span><span class="metric-value" id="vertexCountNumber"> - </span></p>
-    <p><span class="metric">Connectedness: </span><span class="metric-value" id="connectionPercentage"> - </span></p>
-    <p><span class="metric">Informed vertices: </span><span class="metric-value" id="informedVertices"> - </span></p>
-<!--    <p><span class="metric">Informed vertices in a round: </span><span class="metric-value" id="informedVerticesOne"> - </span></p>-->
-    <p><span class="metric">Last Printed: </span><span class="metric-value" id="lastPrintedDate"> - </span></p>
-    <div id="actions">
-        <div id="simple-actions">
-            <button class="action-button secondary playing" id="playToggle">Pause</button>
-            <button class="action-button secondary" id="download">Download</button>
-            <button class="action-button secondary" id="downloadInformed">Download (informed)</button>
-            <button class="action-button secondary" id="print">Print</button>
-            <button class="action-button secondary" id="upload">Upload</button>
-            <div class="hidden" id="loading"></div>
-            <div id="timeline">
-                <hr />
+    <div id="content">
+        <div id="scene"></div>
+        <div class="info-container">
+            <div class="info">
+                <p><span class="metric">Graph Name: </span><span class="metric-value" id="graphName"> - </span></p>
+                <p><span class="metric">Snapshot Id: </span><span class="metric-value" id="snapshotId"> - </span></p>
+                <p><span class="metric">Snapshot Count: </span><span class="metric-value" id="snapshotCountNumber"> -
+                    </span></p>
+                <p><span class="metric">Vertex Count: </span><span class="metric-value" id="vertexCountNumber"> -
+                    </span></p>
+                <p><span class="metric">Isolated: </span><span class="metric-value" id="isolationPercentage"> - </span>
+                </p>
+                <p><span class="metric">Informed after rounds (broadcast): </span><span class="metric-value"
+                        id="connectedRoundsBroadcast"> - </span></p>
+                <p><span class="metric">Informed after rounds (unicast): </span><span class="metric-value"
+                        id="connectedRoundsUnicast"> - </span></p>
             </div>
-            <div id="generate-action">
-                <div class="field">
-                    <input type="number" id="vertexCount">
-                    <label for="vertexCount">Vertices</label>
-                </div>
-                <div class="field">
-                    <input type="number" id="snapshotCount">
-                    <label for="snapshotCount">Snapshots</label>
-                </div>
-                <div class="field">
-                    <input type="number" id="densityIndex">
-                    <label for="densityIndex">Density Index</label>
-                </div>
-                <button class="action-button primary" id="generate">Generate</button>
+            <div class="info info-container">
+                <div id="linechart-broadcast"></div>
+                <div id="linechart-unicast"></div>
+                <div id="linechart-isolated"></div>
             </div>
         </div>
     </div>
-</div>
-<div id="output"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.3.0/d3.min.js"></script>
-<script src="ForceGraph.js"></script>
-<script src="BarPlot.js"></script>
-<script src="script.js" ></script>
-<script src="eventHandlers.js" ></script>
+    <div class="info">
+        <div id="actions">
+            <div id="simple-actions">
+                <button class="action-button secondary playing" id="playToggle">Pause</button>
+                <button class="action-button secondary" id="download">Download</button>
+                <button class="action-button secondary" id="downloadInformed">Informed</button>
+                <button class="action-button secondary" id="upload">Upload</button>
+                <label class="switch">
+                    <input type="checkbox" id="unicastSwitcher">
+                    <span class="slider round"></span>
+                </label>
+
+                <div class="hidden" id="loading"></div>
+                <div id="timeline">
+                    <hr />
+                </div>
+                <div id="generate-action">
+                    <div class="field">
+                        <input type="number" id="vertexCount">
+                        <label for="vertexCount">Vertices</label>
+                    </div>
+                    <div class="field">
+                        <input type="number" id="snapshotCount">
+                        <label for="snapshotCount">Snapshots</label>
+                    </div>
+                    <div class="field">
+                        <input type="text" id="probability">
+                        <label for="probability">Probability
+                            <span class="tooltip">?
+                                <span class="tooltiptext">1/n, 0.1/n, 0.05/n, logn/n, 18logn/n, random, number</span>
+                            </span>
+                        </label>
+
+                    </div>
+                    <button class="action-button primary" id="generate">Generate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="output"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.3.0/d3.min.js"></script>
+    <script src="LineChart.js"></script>
+    <script src="ForceGraph.js"></script>
+    <script src="BarPlot.js"></script>
+    <script src="script.js"></script>
+    <script src="eventHandlers.js"></script>
 </body>
+
 </html>
