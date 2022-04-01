@@ -9,7 +9,7 @@ document.getElementById('download').onclick = () => {
 document.getElementById('unicastSwitcher').onchange = (event) => {
   const isUnicast = document.getElementById('unicastSwitcher').checked;
   vertexSnapshots[lastSnapshotIndex].forEach(vertex => {
-    document.getElementById(`node-${vertex.id}`).setAttribute('fill', (isUnicast ? (vertex.hasInfo ? '#42aa9d' : 'black') : (vertex.hasBroadInfo ? '#425caa' : 'black')));
+    document.getElementById(`node-${vertex.id}`).setAttribute('fill', (isUnicast ? (vertex.hasUnicastInfo ? '#42aa9d' : 'black') : (vertex.hasBroadcastInfo ? '#425caa' : 'black')));
   });
 }
 

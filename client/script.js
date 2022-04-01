@@ -112,7 +112,7 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
 
     const isUnicast = document.getElementById('unicastSwitcher').checked;
     vertices.forEach(vertex => {
-      document.getElementById(`node-${vertex.id}`).setAttribute('fill', (isUnicast ? (vertex.hasInfo ? '#42aa9d' : 'black') : (vertex.hasBroadInfo ? '#425caa' : 'black')));
+      document.getElementById(`node-${vertex.id}`).setAttribute('fill', (isUnicast ? (vertex.hasUnicastInfo ? '#42aa9d' : 'black') : (vertex.hasBroadcastInfo ? '#425caa' : 'black')));
     })
 
     snapshotIndex++;
@@ -210,14 +210,16 @@ function drawStats() {
   document.getElementById('linechart-broadcast').innerHTML = '';
   document.getElementById('linechart-unicast').innerHTML = '';
   document.getElementById('linechart-isolated').innerHTML = '';
+  document.getElementById('linechart-edges').innerHTML = '';
 
   const transformedData = distributionsData.info.map(each => {
-    const [index, broadcastSingle, broadcast, unicastSingle, unicast, isolated] = each;
+    const [index, broadcastSingle, broadcast, unicastSingle, unicast, isolated, edges] = each;
     return {
       index,
       broadcastSingle,
       unicastSingle,
       isolated,
+      edges,
     }
   })
   drawLineChart({
@@ -237,6 +239,12 @@ function drawStats() {
     containerId: 'linechart-isolated',
     xAxis: 'index',
     yAxis: 'isolated'
+  })
+  drawLineChart({
+    data: transformedData,
+    containerId: 'linechart-edges',
+    xAxis: 'index',
+    yAxis: 'edges'
   })
 }
 
@@ -292,7 +300,7 @@ function generateVertexSnapshots() {
 
   const infoSnapshots = storedSnapshots.map(snapshot => (
     snapshot.vertices.map((vertex, index) => ({
-      id: vertex, hasInfo: index === 0, hasBroadInfo: index === 0
+      id: vertex, hasUnicastInfo: index === 0, hasBroadcastInfo: index === 0
     }))
   ));
 
@@ -301,33 +309,33 @@ function generateVertexSnapshots() {
 
     if (infoSnapshots[index - 1]) {
       vertices.forEach((vertex, vertexIndex) => {
-        vertex.hasInfo = infoSnapshots[index - 1][vertexIndex].hasInfo;
-        vertex.hasBroadInfo = infoSnapshots[index - 1][vertexIndex].hasBroadInfo;
+        vertex.hasUnicastInfo = infoSnapshots[index - 1][vertexIndex].hasUnicastInfo;
+        vertex.hasBroadcastInfo = infoSnapshots[index - 1][vertexIndex].hasBroadcastInfo;
       })
     }
 
     snapshot.edges.forEach(edge => {
-      if (vertices[edge.source].hasBroadInfo && !vertices[edge.target].hasBroadInfo) {
+      if (vertices[edge.source].hasBroadcastInfo && !vertices[edge.target].hasBroadcastInfo) {
         infoQueue.push(edge.target);
       }
-      if (vertices[edge.target].hasBroadInfo && !vertices[edge.source].hasBroadInfo) {
+      if (vertices[edge.target].hasBroadcastInfo && !vertices[edge.source].hasBroadcastInfo) {
         infoQueue.push(edge.source);
       }
-      if (vertices[edge.target].hasInfo && !vertices[edge.source].hasInfo) {
+      if (vertices[edge.target].hasUnicastInfo && !vertices[edge.source].hasUnicastInfo) {
         if (!Object.values(infoMap).includes(edge.source))
           infoMap[edge.target] = edge.source;
       }
-      if (vertices[edge.source].hasInfo && !vertices[edge.target].hasInfo) {
+      if (vertices[edge.source].hasUnicastInfo && !vertices[edge.target].hasUnicastInfo) {
         if (!Object.values(infoMap).includes(edge.target))
           infoMap[edge.source] = edge.target;
       }
     });
 
-    infoQueue.forEach(vertexIndex => vertices[vertexIndex].hasBroadInfo = true);
-    Object.values(infoMap).forEach(vertexIndex => vertices[vertexIndex].hasInfo = true);
+    infoQueue.forEach(vertexIndex => vertices[vertexIndex].hasBroadcastInfo = true);
+    Object.values(infoMap).forEach(vertexIndex => vertices[vertexIndex].hasUnicastInfo = true);
 
-    const unicastVertices = vertices.reduce((acc, vertex) => acc + Number(vertex.hasInfo), 0);
-    const broadcastVertices = vertices.reduce((acc, vertex) => acc + Number(vertex.hasBroadInfo), 0);
+    const unicastVertices = vertices.reduce((acc, vertex) => acc + Number(vertex.hasUnicastInfo), 0);
+    const broadcastVertices = vertices.reduce((acc, vertex) => acc + Number(vertex.hasBroadcastInfo), 0);
 
     if (unicastVertices == vertices.length && document.getElementById('connectedRoundsUnicast').innerText == '-') {
       document.getElementById('connectedRoundsUnicast').innerText = index;
@@ -337,7 +345,7 @@ function generateVertexSnapshots() {
       document.getElementById('connectedRoundsBroadcast').innerText = index;
     }
 
-    distributionsData.info.push([distributionsData.info.length, broadcastVertices - distributionsData.prevBroadcastVertices, broadcastVertices, unicastVertices - distributionsData.prevUnicastVertices, unicastVertices, calculateIsolationPercentage(snapshot)]);
+    distributionsData.info.push([distributionsData.info.length, broadcastVertices - distributionsData.prevBroadcastVertices, broadcastVertices, unicastVertices - distributionsData.prevUnicastVertices, unicastVertices, calculateIsolationPercentage(snapshot), snapshot.edges.length / Math.pow(snapshot.vertices.length, 2) * 100]);
     distributionsData.prevUnicastVertices = unicastVertices;
     distributionsData.prevBroadcastVertices = broadcastVertices;
 
@@ -365,7 +373,7 @@ function setup() {
 setup();
 
 function generateStatsCSV() {
-  return 'data:text/json;charset=utf-8,index,broadcastSingle,broadcast,unicastSingle,unicast,isolated\n' + encodeURIComponent(distributionsData.info.map(row => row.toString()).join('\n'));
+  return 'data:text/json;charset=utf-8,index,broadcastSingle,broadcast,unicastSingle,unicast,isolated,edges\n' + encodeURIComponent(distributionsData.info.map(row => row.toString()).join('\n'));
 }
 
 function downloadCurrentGraph() {
