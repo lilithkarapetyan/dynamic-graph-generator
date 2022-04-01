@@ -71,8 +71,11 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
     storedSnapshots = snapshots;
   }
 
+  distributionsData.infoGiving = [];
+  distributionsData.prevInformedVertices = 0;
   document.getElementById('snapshotCountNumber').innerText = snapshots.length;
   document.getElementById('vertexCountNumber').innerText = snapshots[0].vertices.length;
+  document.getElementById('informedVertices').innerText = '-';
 
   chart && document.getElementById("scene").removeChild(chart);
   chart = ForceGraph({
@@ -115,10 +118,12 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
       //   giveInfo.push(edge.source);
       // }
       if(vertices[edge.target].hasInfo && !vertices[edge.source].hasInfo){
-        colorMap[edge.target] = edge.source;
+        if(!Object.values(colorMap).includes(edge.source))
+          colorMap[edge.target] = edge.source;
       }
       if(vertices[edge.source].hasInfo && !vertices[edge.target].hasInfo){
-        colorMap[edge.source] = edge.target;
+        if(!Object.values(colorMap).includes(edge.target))
+          colorMap[edge.source] = edge.target;
       }
     });
 
@@ -131,7 +136,7 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
     });
     updateBarPlot(calculateDegrees(snapshots[snapshotIndex]));
 
-    //
+
     // giveInfo.forEach(vertexIndex => vertices[vertexIndex].hasInfo = true);
     // giveInfo.length = 0;
     //////////
@@ -145,7 +150,6 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
     // }
     //////
 
-    // console.log(colorMap)
     Object.values(colorMap).forEach(vertexIndex => vertices[vertexIndex].hasInfo = true);
 
     vertices.forEach(vertex => {
@@ -156,7 +160,7 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
 
     const informedVertices = vertices.reduce((acc, vertex) => acc + Number(vertex.hasInfo), 0) ;
     const informationPercentage = informedVertices / vertices.length * 100;
-    distributionsData.infoGiving.push([distributionsData.infoGiving.length, informedVertices - distributionsData.prevInformedVertices, informedVertices]);
+    distributionsData.infoGiving.push([distributionsData.infoGiving.length, informedVertices - distributionsData.prevInformedVertices, informedVertices, calculateConnectionPercentage(snapshots[snapshotIndex]), snapshots[snapshotIndex].edges.length / Math.pow(snapshots[snapshotIndex].vertices.length, 2) * 100 ]);
     distributionsData.prevInformedVertices = informedVertices;
     document.getElementById('informedVertices').innerText = document.getElementById('informedVertices').innerText + ' ' + informationPercentage.toFixed(2) + '%';
     // document.getElementById('informedVerticesOne').innerText = +document.getElementById('informedVerticesOne').innerText.split(' ').pop()
@@ -205,7 +209,7 @@ function downloadCurrentGraph() {
 
 function downloadInformed() {
   const element = document.createElement('a');
-  element.setAttribute('href', 'data:text/json;charset=utf-8,' + encodeURIComponent(distributionsData.infoGiving.map(row => row.toString()).join('\n')));
+  element.setAttribute('href', 'data:text/json;charset=utf-8,index,dist,informed,connectedness,edges\n' + encodeURIComponent(distributionsData.infoGiving.map(row => row.toString()).join('\n')));
   element.setAttribute('download', 'informed_vertices.csv');
 
   element.style.display = 'none';

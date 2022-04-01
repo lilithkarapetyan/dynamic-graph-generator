@@ -13,6 +13,7 @@ class Graph {
     directed?: boolean,
   }) {
     this.directed = directed ?? false;
+
     if(data) {
       for(let i = 0; i < data.length; i++) {
         this.data.push([]);
@@ -34,6 +35,13 @@ class Graph {
     }
   }
 
+  clearEdges() {
+    for(let i = 0; i < this.data.length; i++) {
+      for(let j = 0; j < this.data[i].length; j++) {
+        this.data[i][j] = 0;
+      }
+    }
+  }
   addVertex() {
     this.data.forEach(row => row.push(0));
     this.data.push((new Array<number>(this.data.length + 1) as number[]).fill(0));

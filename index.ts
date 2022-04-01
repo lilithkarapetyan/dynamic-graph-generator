@@ -21,11 +21,15 @@ export function createSnapshots({
   g.takeSnapshot();
 
   repeat(() => {
-    for(let i = 0; i < Math.random() * MAX_EDGE_COUNT; i++) {
-      if(i % densityIndex === 0)
-        g.addRandomEdge(getRandomVertex(vertexCount), getRandomVertex(vertexCount));
-      else
-        g.removeRandomEdge(getRandomVertex(vertexCount), getRandomVertex(vertexCount));
+    g.clearEdges();
+    for(let i = 0; i < vertexCount; i++) {
+      // if(i % densityIndex === 0)
+      for(let j = 0; j < vertexCount; j++) {
+        if (Math.random() * 100 <= densityIndex)
+          g.addRandomEdge(i, j);
+        // else
+      }
+        // g.removeRandomEdge(getRandomVertex(vertexCount), getRandomVertex(vertexCount));
     }
     g.takeSnapshot();
   }, snapshotCount);
