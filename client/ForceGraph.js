@@ -27,7 +27,8 @@ function ForceGraph({
   colors = d3.schemeTableau10, // an array of color strings, for the node groups
   width = 640, // outer width, in pixels
   height = 400, // outer height, in pixels
-  invalidation // when this promise resolves, stop the simulation
+  invalidation, // when this promise resolves, stop the simulation,
+  withDrag
 } = {}) {
   // Compute values.
   const N = d3.map(nodes, nodeId).map(intern);
@@ -49,7 +50,7 @@ function ForceGraph({
   const color = nodeGroup == null ? null : d3.scaleOrdinal(nodeGroups, colors);
 
   // Construct the forces.
-  const forceNode = d3.forceManyBody().strength(-200);
+  const forceNode = d3.forceManyBody();
   const forceLink = d3.forceLink(links).id(({ index: i }) => N[i]);
   if (nodeStrength !== undefined) forceNode.strength(nodeStrength);
   if (linkStrength !== undefined) forceLink.strength(linkStrength);
@@ -88,7 +89,8 @@ function ForceGraph({
     .join("circle")
     .attr("r", nodeRadius)
     .attr("id", ({ index: i }) => `node-${i}`)
-    .call(drag(simulation));
+  
+    withDrag && node.call(drag(simulation));
 
   // if (G) node.attr("fill", ({index: i}) => color(G[i]));
   if (T) node.append("title").text(({ index: i }) => T[i]);
@@ -148,6 +150,9 @@ function ForceGraph({
       simulation.nodes(nodes);
       simulation.force("link").links(links);
       simulation.alpha(1).restart().tick();
+      ticked();
+    },
+    tick() {
       ticked();
     }
   });

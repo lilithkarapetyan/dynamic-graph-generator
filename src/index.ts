@@ -1,5 +1,5 @@
-import Graph from "./src/Graph";
-import { getRandomVertex, repeat } from "./src/utils";
+import Graph from "./Graph";
+import { getRandomVertex, repeat } from "./utils";
 
 export function createSnapshots({
   vertexCount,
@@ -16,8 +16,6 @@ export function createSnapshots({
 
   repeat(() => g.addVertex(), vertexCount);
 
-  g.takeSnapshot();
-
   repeat(() => {
     g.clearEdges();
 
@@ -29,6 +27,7 @@ export function createSnapshots({
       case 'logn/n': p = () => Math.log(vertexCount) / vertexCount; break;
       case '18logn/n': p = () => 18 * Math.log(vertexCount) / vertexCount; break;
       case 'random': p = () => Math.random(); break;
+      break;
       default: p = probability ? () => probability : p; break;
     }
 

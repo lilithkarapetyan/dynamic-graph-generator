@@ -64,6 +64,29 @@ function setupTimeline(snapshots) {
   })
 }
 
+function drawGraphDiff() {
+  document.getElementById("snapshots").innerHTML = ''
+  const [snapshot] = storedSnapshots;
+
+  let chart = ForceGraph({
+    nodes: snapshot.vertices,
+    links: snapshot.edges,
+  }, {
+    nodeId: d => d,
+    nodeTitle: d => d,
+    width: window.innerWidth / 3 * 2,
+    height: window.innerHeight / 3 * 2,
+    nodeStrokeWidth: 2,
+    linkStrokeWidth: 1,
+    nodeStrength: -200,
+    nodeRadius: 4,
+  })
+  chart.tick();
+
+  document.getElementById("snapshots").appendChild(chart);
+
+}
+
 function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
   let chart;
   let vertices;
@@ -72,6 +95,7 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
 
   if (snapshots) {
     storedSnapshots = snapshots;
+    drawGraphDiff()
   }
 
   generateVertexSnapshots();
@@ -79,7 +103,6 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
   document.getElementById('snapshotCountNumber').innerText = snapshots.length;
   document.getElementById('vertexCountNumber').innerText = snapshots[0].vertices.length;
 
-  chart && document.getElementById("scene").removeChild(chart);
   chart = ForceGraph({
     nodes: snapshots[snapshotIndex].vertices,
     links: snapshots[snapshotIndex].edges,
@@ -90,6 +113,8 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
     height: window.innerHeight / 3 * 2,
     nodeStrokeWidth: 2,
     linkStrokeWidth: 1,
+    nodeStrength: -200,
+    withDrag: true
   });
 
   document.getElementById("scene").appendChild(chart);
@@ -291,7 +316,7 @@ function generateNewGraph() {
     .finally(() => setLoading(false));
 }
 
-function generateVertexSnapshots() {
+function generateVertexSnapshots(startIndex = 0) {
   let infoMap = {};
   let infoQueue = [];
   distributionsData.info = [];
@@ -300,7 +325,7 @@ function generateVertexSnapshots() {
 
   const infoSnapshots = storedSnapshots.map(snapshot => (
     snapshot.vertices.map((vertex, index) => ({
-      id: vertex, hasUnicastInfo: index === 0, hasBroadcastInfo: index === 0
+      id: vertex, hasUnicastInfo: index === startIndex, hasBroadcastInfo: index === startIndex
     }))
   ));
 

@@ -1,5 +1,5 @@
 const express = require("express");
-import { createFromSnapshots, createSnapshots } from "./index";
+import { createFromSnapshots, createSnapshots } from "./src/index";
 
 const app = express()
 const port = 3000;
