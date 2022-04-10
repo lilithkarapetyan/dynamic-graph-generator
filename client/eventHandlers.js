@@ -9,9 +9,18 @@ document.getElementById('download').onclick = () => {
 document.getElementById('unicastSwitcher').onchange = (event) => {
   const isUnicast = document.getElementById('unicastSwitcher').checked;
   vertexSnapshots[lastSnapshotIndex].forEach(vertex => {
-    document.getElementById(`node-${vertex.id}`).setAttribute('fill', (isUnicast ? (vertex.hasUnicastInfo ? '#42aa9d' : 'black') : (vertex.hasBroadcastInfo ? '#425caa' : 'black')));
+    document.getElementById(`node-${vertex.id}`).setAttribute('fill', (
+      isUnicast ? (vertex.hasUnicastInfo ? '#fed683' : 'black') : (vertex.hasBroadcastInfo ? '#f6d1df' : 'black')
+    ));
+    document.getElementById(`node-${vertex.id}`).setAttribute('stroke', (
+      isUnicast ? (!!vertex.unicastTimer ? '#67a2d8' : '#c4c4c4') : (!!vertex.broadcastTimer ? '#67a2d8' : '#c4c4c4')
+    ));
   });
 }
+
+document.getElementById('castIndex').onchange = play;
+
+document.getElementById('maxInfoGivingTime').onchange = play;
 
 document.getElementById('generate').onclick = () => {
   setLoading(true);
@@ -31,4 +40,7 @@ document.getElementById('playToggle').onclick = () => {
 
 document.getElementById('downloadInformed').onclick = () => {
   downloadInformed();
+}
+document.getElementById('generateFromAllVertices').onclick = () => {
+  calculateRoundsFromAllVertices();
 }

@@ -1,9 +1,9 @@
 // set the dimensions and margins of the graph
-const margin = { top: 4, right: 8, bottom: 16, left: 24 },
+const margin = { top: 24, right: 8, bottom: 16, left: 24 },
     width = 260 - margin.left - margin.right,
     height = 200 - margin.top - margin.bottom;
 
-function drawLineChart({ data, containerId, xAxis, yAxis }) {
+function drawLineChart({ data, containerId, xAxis, yAxis, title }) {
 
     // append the svg object to the body of the page
     const svg = d3.select(`#${containerId}`)
@@ -22,10 +22,16 @@ function drawLineChart({ data, containerId, xAxis, yAxis }) {
         .call(d3.axisBottom(x));
 
     const y = d3.scaleLinear()
-        .domain([0, Math.max(...(data.map(item => item[yAxis]))) + 10])
+        .domain([Math.min(...(data.map(item => item[yAxis]))), Math.max(...(data.map(item => item[yAxis]))) + 10])
         .range([height, 0]);
     svg.append("g")
         .call(d3.axisLeft(y));
+    svg.append("text")
+      .attr("x", (width / 2))
+      .attr("y", margin.top / 2)
+      .attr("text-anchor", "middle")
+      .style("font-size", "12px")
+      .text(title ? `${title}` : `${xAxis} X ${yAxis}`);
 
     const bisect = d3.bisector(function (d) { return d[xAxis]; }).left;
 

@@ -76,7 +76,7 @@ function drawGraphDiff() {
     nodeTitle: d => d,
     width: window.innerWidth / 3 * 2,
     height: window.innerHeight / 3 * 2,
-    nodeStrokeWidth: 2,
+    nodeStrokeWidth: 3,
     linkStrokeWidth: 1,
     nodeStrength: -200,
     nodeRadius: 4,
@@ -111,7 +111,7 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
     nodeTitle: d => d,
     width: window.innerWidth / 3 * 2,
     height: window.innerHeight / 3 * 2,
-    nodeStrokeWidth: 2,
+    nodeStrokeWidth: 3,
     linkStrokeWidth: 1,
     nodeStrength: -200,
     withDrag: true
@@ -137,7 +137,12 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
 
     const isUnicast = document.getElementById('unicastSwitcher').checked;
     vertices.forEach(vertex => {
-      document.getElementById(`node-${vertex.id}`).setAttribute('fill', (isUnicast ? (vertex.hasUnicastInfo ? '#42aa9d' : 'black') : (vertex.hasBroadcastInfo ? '#425caa' : 'black')));
+      document.getElementById(`node-${vertex.id}`).setAttribute('fill', (
+        isUnicast ? (vertex.hasUnicastInfo ? '#fed683' : 'black') : (vertex.hasBroadcastInfo ? '#f6d1df' : 'black')
+      ));
+      document.getElementById(`node-${vertex.id}`).setAttribute('stroke', (
+        isUnicast ? (!!vertex.unicastTimer ? '#67a2d8' : '#c4c4c4') : (!!vertex.broadcastTimer ? '#67a2d8' : '#c4c4c4')
+      ));
     })
 
     snapshotIndex++;
@@ -151,8 +156,10 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
 
 function clearGraph() {
   clearInterval(drawInterval);
-  document.getElementById('connectedRoundsUnicast').innerText = ' - '
-  document.getElementById('connectedRoundsBroadcast').innerText = ' - '
+  document.getElementById('connectedRoundsUnicast').innerText = '-'
+  document.getElementById('connectedRoundsBroadcast').innerText = '-'
+  document.getElementById('hadInfoRoundsBroadcast').innerText = '-'
+  document.getElementById('hadInfoRoundsUnicast').innerText = '-'
   document.getElementById('scene').innerHTML = '';
 }
 
@@ -238,39 +245,101 @@ function drawStats() {
   document.getElementById('linechart-edges').innerHTML = '';
 
   const transformedData = distributionsData.info.map(each => {
-    const [index, broadcastSingle, broadcast, unicastSingle, unicast, isolated, edges] = each;
+    const [index, broadcastSingle, broadcast, unicastSingle, unicast, isolated, edges, broadcastSingleAll, unicastSingleAll] = each;
     return {
       index,
       broadcastSingle,
+      broadcastSingleAll,
       unicastSingle,
+      unicastSingleAll,
+      broadcast,
+      unicast,
       isolated,
       edges,
     }
   })
+  // drawLineChart({
+  //   data: transformedData,
+  //   containerId: 'linechart-isolated',
+  //   xAxis: 'index',
+  //   yAxis: 'broadcastSingleAll',
+  //   title: 'Had broadcastInfo'
+  // })
+  // drawLineChart({
+  //   data: transformedData,
+  //   containerId: 'linechart-edges',
+  //   xAxis: 'index',
+  //   yAxis: 'unicastSingleAll',
+  //   title: 'Had unicastInfo'
+  // })
   drawLineChart({
     data: transformedData,
     containerId: 'linechart-broadcast',
     xAxis: 'index',
-    yAxis: 'broadcastSingle'
+    yAxis: 'broadcastSingle',
+    title: 'hasBroadcastInfo PMF'
   })
   drawLineChart({
     data: transformedData,
     containerId: 'linechart-unicast',
     xAxis: 'index',
-    yAxis: 'unicastSingle'
+    yAxis: 'unicastSingle',
+    title: 'hasUnicastInfo PMF'
   })
   drawLineChart({
     data: transformedData,
-    containerId: 'linechart-isolated',
+    containerId: 'linechart-broadcast',
     xAxis: 'index',
-    yAxis: 'isolated'
+    yAxis: 'broadcast',
+    title: 'hasBroadCastInfo CDF'
   })
   drawLineChart({
     data: transformedData,
-    containerId: 'linechart-edges',
+    containerId: 'linechart-unicast',
     xAxis: 'index',
-    yAxis: 'edges'
+    yAxis: 'unicast',
+    title: 'hasUnicastInfo CDF'
   })
+}
+
+function drawAllVertexOriginatorStats(allVerticesData) {
+  document.getElementById('linechart-all-vertices-broadcast').innerHTML = '';
+  document.getElementById('linechart-all-vertices-unicast').innerHTML = '';
+  document.getElementById('linechart-all-vertices-broadcast-first').innerHTML = '';
+  document.getElementById('linechart-all-vertices-unicast-first').innerHTML = '';
+
+  drawLineChart({
+    data: allVerticesData,
+    containerId: 'linechart-all-vertices-broadcast',
+    xAxis: 'originator',
+    yAxis: 'broadcastInfo',
+    title: 'All vertices broadcast'
+  })
+
+  drawLineChart({
+    data: allVerticesData,
+    containerId: 'linechart-all-vertices-unicast',
+    xAxis: 'originator',
+    yAxis: 'unicastInfo',
+    title: 'All vertices unicast'
+  })
+
+  drawLineChart({
+    data: allVerticesData,
+    containerId: 'linechart-all-vertices-broadcast-first',
+    xAxis: 'originator',
+    yAxis: 'firstBroadcastInfoWithTimer',
+    title: 'All vertices broadcast with timer'
+  })
+
+  drawLineChart({
+    data: allVerticesData,
+    containerId: 'linechart-all-vertices-unicast-first',
+    xAxis: 'originator',
+    yAxis: 'firstUnicastInfoWithTimer',
+    title: 'All vertices unicast with timer'
+  })
+
 }
 
 function playToggled() {
@@ -319,13 +388,32 @@ function generateNewGraph() {
 function generateVertexSnapshots(startIndex = 0) {
   let infoMap = {};
   let infoQueue = [];
+  let castIndex = +localStorage.getItem('castIndex');
+  let maxInfoGivingTime = +localStorage.getItem('maxInfoGivingTime');
   distributionsData.info = [];
   distributionsData.prevUnicastVertices = 0;
   distributionsData.prevBroadcastVertices = 0;
 
+  if(document.getElementById('castIndex').value) {
+    castIndex = +document.getElementById('castIndex').value;
+    localStorage.setItem('castIndex', `${castIndex}`);
+  }else {
+    document.getElementById('castIndex').value = castIndex;
+  }
+  if(document.getElementById('maxInfoGivingTime').value) {
+    maxInfoGivingTime = +document.getElementById('maxInfoGivingTime').value;
+    localStorage.setItem('maxInfoGivingTime', `${maxInfoGivingTime}`);
+  }else {
+    document.getElementById('maxInfoGivingTime').value = maxInfoGivingTime;
+  }
+
   const infoSnapshots = storedSnapshots.map(snapshot => (
     snapshot.vertices.map((vertex, index) => ({
-      id: vertex, hasUnicastInfo: index === startIndex, hasBroadcastInfo: index === startIndex
+      id: vertex,
+      hasUnicastInfo: index === startIndex,
+      hasBroadcastInfo: index === startIndex,
+      broadcastTimer: 0,
+      unicastTimer: 0,
     }))
   ));
 
@@ -335,42 +423,99 @@ function generateVertexSnapshots(startIndex = 0) {
     if (infoSnapshots[index - 1]) {
       vertices.forEach((vertex, vertexIndex) => {
         vertex.hasUnicastInfo = infoSnapshots[index - 1][vertexIndex].hasUnicastInfo;
+        vertex.unicastTimer = infoSnapshots[index - 1][vertexIndex].unicastTimer;
         vertex.hasBroadcastInfo = infoSnapshots[index - 1][vertexIndex].hasBroadcastInfo;
+        vertex.broadcastTimer = infoSnapshots[index - 1][vertexIndex].broadcastTimer;
+
+
+        if(vertex.broadcastTimer > maxInfoGivingTime) {
+          vertex.hasBroadcastInfo = false;
+        }
+        if(vertex.unicastTimer > maxInfoGivingTime) {
+          vertex.hasUnicastInfo = false;
+        }
       })
     }
 
     snapshot.edges.forEach(edge => {
-      if (vertices[edge.source].hasBroadcastInfo && !vertices[edge.target].hasBroadcastInfo) {
+      if (
+        vertices[edge.source].hasBroadcastInfo &&
+        !vertices[edge.target].hasBroadcastInfo
+      ) {
         infoQueue.push(edge.target);
       }
-      if (vertices[edge.target].hasBroadcastInfo && !vertices[edge.source].hasBroadcastInfo) {
+      if (
+        vertices[edge.target].hasBroadcastInfo &&
+        !vertices[edge.source].hasBroadcastInfo
+      ) {
         infoQueue.push(edge.source);
       }
-      if (vertices[edge.target].hasUnicastInfo && !vertices[edge.source].hasUnicastInfo) {
-        if (!Object.values(infoMap).includes(edge.source))
-          infoMap[edge.target] = edge.source;
+      if (
+        vertices[edge.target].hasUnicastInfo &&
+        !vertices[edge.source].hasUnicastInfo
+      ) {
+        if (!Object.values(infoMap).filter(value =>  value?.has(edge.source)).length) {
+          if(!infoMap[edge.target]){
+            infoMap[edge.target] = new Set();
+          }
+          if(infoMap[edge.target].size < castIndex) {
+            infoMap[edge.target].add(edge.source);
+          }
+        }
       }
-      if (vertices[edge.source].hasUnicastInfo && !vertices[edge.target].hasUnicastInfo) {
-        if (!Object.values(infoMap).includes(edge.target))
-          infoMap[edge.source] = edge.target;
+      if (
+        vertices[edge.source].hasUnicastInfo &&
+        !vertices[edge.target].hasUnicastInfo
+      ) {
+        if (!Object.values(infoMap).filter(value => value.has(edge.target)).length) {
+          if(!infoMap[edge.source]){
+            infoMap[edge.source] = new Set();
+          }
+          if(infoMap[edge.source].size < castIndex) {
+            infoMap[edge.source].add(edge.target);
+          }
+        }
       }
     });
 
-    infoQueue.forEach(vertexIndex => vertices[vertexIndex].hasBroadcastInfo = true);
-    Object.values(infoMap).forEach(vertexIndex => vertices[vertexIndex].hasUnicastInfo = true);
+    infoQueue.forEach(vertexIndex => {
+      vertices[vertexIndex].hasBroadcastInfo = true;
+      vertices[vertexIndex].broadcastTimer = 0;
+    });
+    Object.values(infoMap).forEach(vertexSet => vertexSet?.forEach(vertexIndex => {
+      vertices[vertexIndex].hasUnicastInfo = true;
+      vertices[vertexIndex].unicastTimer = 0;
+    }));
 
-    const unicastVertices = vertices.reduce((acc, vertex) => acc + Number(vertex.hasUnicastInfo), 0);
-    const broadcastVertices = vertices.reduce((acc, vertex) => acc + Number(vertex.hasBroadcastInfo), 0);
+    snapshot.vertices.forEach(vertex => {
+      if (vertices[vertex].hasBroadcastInfo) {
+        vertices[vertex].broadcastTimer++;
+      }
+      if (vertices[vertex].hasUnicastInfo) {
+        vertices[vertex].unicastTimer++;
+      }
+    });
 
-    if (unicastVertices == vertices.length && document.getElementById('connectedRoundsUnicast').innerText == '-') {
+    const unicastVertices = vertices.reduce((acc, vertex) => acc + Number(!!vertex.hasUnicastInfo), 0);
+    const broadcastVertices = vertices.reduce((acc, vertex) => acc + Number(!!vertex.hasBroadcastInfo), 0);
+
+    const unicastVerticesAll = vertices.filter(vertex => vertex.unicastTimer !== 0).length;
+    const broadcastVerticesAll = vertices.filter(vertex => vertex.broadcastTimer !== 0).length;
+
+    if (unicastVerticesAll === vertices.length && document.getElementById('connectedRoundsUnicast').innerText === '-') {
       document.getElementById('connectedRoundsUnicast').innerText = index;
     }
-
-    if (broadcastVertices == vertices.length && document.getElementById('connectedRoundsBroadcast').innerText == '-') {
+    if (broadcastVerticesAll === vertices.length && document.getElementById('connectedRoundsBroadcast').innerText === '-') {
       document.getElementById('connectedRoundsBroadcast').innerText = index;
     }
+    if (unicastVertices === vertices.length && document.getElementById('hadInfoRoundsUnicast').innerText === '-') {
+      document.getElementById('hadInfoRoundsUnicast').innerText = index + 1;
+    }
+    if (broadcastVertices === vertices.length && document.getElementById('hadInfoRoundsBroadcast').innerText === '-') {
+      document.getElementById('hadInfoRoundsBroadcast').innerText = index + 1;
+    }
 
-    distributionsData.info.push([distributionsData.info.length, broadcastVertices - distributionsData.prevBroadcastVertices, broadcastVertices, unicastVertices - distributionsData.prevUnicastVertices, unicastVertices, calculateIsolationPercentage(snapshot), snapshot.edges.length / Math.pow(snapshot.vertices.length, 2) * 100]);
+    distributionsData.info.push([distributionsData.info.length, broadcastVertices - distributionsData.prevBroadcastVertices, broadcastVertices, unicastVertices - distributionsData.prevUnicastVertices, unicastVertices, calculateIsolationPercentage(snapshot), snapshot.edges.length / Math.pow(snapshot.vertices.length, 2) * 100, broadcastVerticesAll, unicastVerticesAll]);
     distributionsData.prevUnicastVertices = unicastVertices;
     distributionsData.prevBroadcastVertices = broadcastVertices;
 
@@ -419,4 +564,139 @@ function downloadCurrentGraph() {
 
       document.body.removeChild(element);
     })
+}
+
+function calculateRoundsFromAllVertices() {
+  const result = new Array(storedSnapshots[0].vertices.length).fill(1).map((_, index) => ({
+    broadcastInfo: -1,
+    unicastInfo: -1,
+    firstBroadcastInfoWithTimer: -1,
+    firstUnicastInfoWithTimer: -1,
+    originator: index,
+  }));
+
+  let originator = 0;
+  const calcInterval = setInterval(() => {
+    if(originator >= storedSnapshots[0].vertices.length) {
+      clearInterval(calcInterval);
+      drawAllVertexOriginatorStats(result);
+    }
+    const infoSnapshots = storedSnapshots.map(snapshot => (
+      snapshot.vertices.map((vertex, index) => ({
+        id: vertex,
+        hasUnicastInfo: index === originator,
+        hasBroadcastInfo: index === originator,
+        broadcastTimer: 0,
+        unicastTimer: 0,
+      }))
+    ));
+
+    storedSnapshots.forEach((snapshot, index) => {
+      let infoMap = {};
+      let infoQueue = [];
+      let castIndex = +localStorage.getItem('castIndex');
+      let maxInfoGivingTime = +localStorage.getItem('maxInfoGivingTime');
+      const vertices = infoSnapshots[index];
+
+      if (infoSnapshots[index - 1]) {
+        vertices.forEach((vertex, vertexIndex) => {
+          vertex.hasUnicastInfo = infoSnapshots[index - 1][vertexIndex].hasUnicastInfo;
+          vertex.unicastTimer = infoSnapshots[index - 1][vertexIndex].unicastTimer;
+          vertex.hasBroadcastInfo = infoSnapshots[index - 1][vertexIndex].hasBroadcastInfo;
+          vertex.broadcastTimer = infoSnapshots[index - 1][vertexIndex].broadcastTimer;
+
+
+          if(vertex.broadcastTimer > maxInfoGivingTime) {
+            vertex.hasBroadcastInfo = false;
+          }
+          if(vertex.unicastTimer > maxInfoGivingTime) {
+            vertex.hasUnicastInfo = false;
+          }
+        })
+      }
+
+      snapshot.edges.forEach(edge => {
+        if (
+          vertices[edge.source].hasBroadcastInfo &&
+          !vertices[edge.target].hasBroadcastInfo
+        ) {
+          infoQueue.push(edge.target);
+        }
+        if (
+          vertices[edge.target].hasBroadcastInfo &&
+          !vertices[edge.source].hasBroadcastInfo
+        ) {
+          infoQueue.push(edge.source);
+        }
+        if (
+          vertices[edge.target].hasUnicastInfo &&
+          !vertices[edge.source].hasUnicastInfo
+        ) {
+          if (!Object.values(infoMap).filter(value =>  value?.has(edge.source)).length) {
+            if(!infoMap[edge.target]){
+              infoMap[edge.target] = new Set();
+            }
+            if(infoMap[edge.target].size < castIndex) {
+              infoMap[edge.target].add(edge.source);
+            }
+          }
+        }
+        if (
+          vertices[edge.source].hasUnicastInfo &&
+          !vertices[edge.target].hasUnicastInfo
+        ) {
+          if (!Object.values(infoMap).filter(value => value.has(edge.target)).length) {
+            if(!infoMap[edge.source]){
+              infoMap[edge.source] = new Set();
+            }
+            if(infoMap[edge.source].size < castIndex) {
+              infoMap[edge.source].add(edge.target);
+            }
+          }
+        }
+      });
+
+      infoQueue.forEach(vertexIndex => {
+        vertices[vertexIndex].hasBroadcastInfo = true;
+        vertices[vertexIndex].broadcastTimer = 0;
+      });
+      Object.values(infoMap).forEach(vertexSet => vertexSet?.forEach(vertexIndex => {
+        vertices[vertexIndex].hasUnicastInfo = true;
+        vertices[vertexIndex].unicastTimer = 0;
+      }));
+
+      snapshot.vertices.forEach(vertex => {
+        if (vertices[vertex].hasBroadcastInfo) {
+          vertices[vertex].broadcastTimer++;
+        }
+        if (vertices[vertex].hasUnicastInfo) {
+          vertices[vertex].unicastTimer++;
+        }
+      });
+
+      const unicastVertices = vertices.reduce((acc, vertex) => acc + Number(!!vertex.hasUnicastInfo), 0);
+      const broadcastVertices = vertices.reduce((acc, vertex) => acc + Number(!!vertex.hasBroadcastInfo), 0);
+
+      const unicastVerticesAll = vertices.filter(vertex => vertex.unicastTimer !== 0).length;
+      const broadcastVerticesAll = vertices.filter(vertex => vertex.broadcastTimer !== 0).length;
+
+      if (unicastVerticesAll === vertices.length && result[originator].unicastInfo === -1) {
+        result[originator].unicastInfo = index;
+      }
+      if (broadcastVerticesAll === vertices.length && result[originator].broadcastInfo === -1) {
+        result[originator].broadcastInfo = index;
+      }
+      if (unicastVertices === vertices.length && result[originator].firstUnicastInfoWithTimer === -1) {
+        result[originator].firstUnicastInfoWithTimer = index + 1;
+      }
+      if (broadcastVertices === vertices.length && result[originator].firstBroadcastInfoWithTimer === -1) {
+        result[originator].firstBroadcastInfoWithTimer = index + 1;
+      }
+
+      infoMap = {};
+      infoQueue = [];
+    })
+
+    originator++;
+  })
 }

@@ -31,6 +31,10 @@
                         id="connectedRoundsBroadcast"> - </span></p>
                 <p><span class="metric">Informed after rounds (unicast): </span><span class="metric-value"
                         id="connectedRoundsUnicast"> - </span></p>
+                <p><span class="metric">All informed first (broadcast): </span><span class="metric-value"
+                        id="hadInfoRoundsBroadcast"> - </span></p>
+                <p><span class="metric">All informed first (unicast): </span><span class="metric-value"
+                        id="hadInfoRoundsUnicast"> - </span></p>
             </div>
             <div class="info info-container">
                 <div id="linechart-broadcast"></div>
@@ -43,20 +47,35 @@
     <div class="info">
         <div id="actions">
             <div id="simple-actions">
-                <button class="action-button secondary playing" id="playToggle">Pause</button>
-                <button class="action-button secondary" id="download">Download</button>
-                <button class="action-button secondary" id="downloadInformed">Informed</button>
-                <button class="action-button secondary" id="upload">Upload</button>
-                <label class="switch">
-                    <input type="checkbox" id="unicastSwitcher">
-                    <span class="slider round"></span>
-                </label>
-
-                <div class="hidden" id="loading"></div>
-                <div id="timeline">
-                    <hr />
+                <div style="display: flex; justify-content: space-between; align-items: center">
+                    <div>
+                        <button class="action-button secondary playing" id="playToggle">Pause</button>
+                        <button class="action-button secondary" id="download">Download</button>
+                        <button class="action-button secondary" id="downloadInformed">Informed</button>
+                        <button class="action-button secondary" id="upload">Upload</button>
+                        <button class="action-button secondary" id="generateFromAllVertices">Originators</button>
+                    </div>
+                    <div class="generate-action">
+                        <label class="switch">
+                            <input type="checkbox" id="unicastSwitcher">
+                            <span class="slider round"></span>
+                        </label>
+                        <div class="field">
+                            <input type="number" id="castIndex">
+                            <label for="castIndex">K - Cast</label>
+                        </div>
+                        <div class="field">
+                            <input type="number" id="maxInfoGivingTime">
+                            <label for="castIndex">Info Fade Limit</label>
+                        </div>
+                    </div>
                 </div>
-                <div id="generate-action">
+                <div>
+                    <div id="timeline">
+                        <hr />
+                    </div>
+                </div>
+                <div class="generate-action">
                     <div class="field">
                         <input type="number" id="vertexCount">
                         <label for="vertexCount">Vertices</label>
@@ -72,12 +91,18 @@
                                 <span class="tooltiptext">1/n, 0.1/n, 0.05/n, logn/n, 18logn/n, random, number</span>
                             </span>
                         </label>
-
                     </div>
                     <button class="action-button primary" id="generate">Generate</button>
+                    <div class="hidden" id="loading"></div>
                 </div>
             </div>
         </div>
+    </div>
+    <div class="info info-container">
+        <div id="linechart-all-vertices-broadcast"></div>
+        <div id="linechart-all-vertices-unicast"></div>
+        <div id="linechart-all-vertices-broadcast-first"></div>
+        <div id="linechart-all-vertices-unicast-first"></div>
     </div>
     <div class="content">
         <div id="snapshots"> </div>

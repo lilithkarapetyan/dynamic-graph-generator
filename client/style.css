@@ -27,7 +27,7 @@ body {
     border-radius: 8px;
     padding: 24px;
     margin: 36px 4px;
-    font-size: 16px;
+    font-size: 12px;
 }
 
 .info p {
@@ -63,8 +63,8 @@ body {
 
 .action-button.playing~.action-button,
 .action-button.playing~#timeline,
-.action-button.playing~#generate-action,
-.action-button.playing~#generate-action .action-button {
+.action-button.playing~.generate-action,
+.action-button.playing~.generate-action .action-button {
     opacity: 0.5;
     pointer-events: none;
 }
@@ -108,18 +108,23 @@ body {
     visibility: hidden;
 }
 
-#generate-action {
+.generate-action {
+    display: flex;
     opacity: 1;
     pointer-events: all;
     margin: 12px 0;
+    align-items: center;
 }
 
-#generate-action div {
+.generate-action > * {
+    margin: 2px;
+}
+.generate-action div {
     display: inline-block;
     position: relative;
 }
 
-#generate-action input {
+.generate-action input {
     width: 100px;
     height: 32px;
     border-radius: 8px;
@@ -127,7 +132,7 @@ body {
     box-sizing: border-box;
 }
 
-#generate-action label {
+.generate-action label:not(.switch) {
     position: absolute;
     top: -8px;
     left: 4px;
@@ -299,4 +304,9 @@ input:checked+.slider:before {
 
 .slider.round:before {
     border-radius: 50%;
+}
+
+#simple-actions{
+    display: flex;
+    flex-direction: column;
 }
