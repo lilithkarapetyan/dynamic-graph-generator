@@ -150,10 +150,10 @@ function ForceGraph({
       simulation.nodes(nodes);
       simulation.force("link").links(links);
       simulation.alpha(1).restart().tick();
-      ticked();
+      return ticked();
     },
     tick() {
-      ticked();
+      return ticked();
     }
   });
 }

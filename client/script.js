@@ -63,29 +63,54 @@ function setupTimeline(snapshots) {
     timelineDiv.appendChild(div);
   })
 }
-
-function drawGraphDiff() {
-  document.getElementById("snapshots").innerHTML = ''
-  const [snapshot] = storedSnapshots;
-
-  let chart = ForceGraph({
-    nodes: snapshot.vertices,
-    links: snapshot.edges,
-  }, {
-    nodeId: d => d,
-    nodeTitle: d => d,
-    width: window.innerWidth / 3 * 2,
-    height: window.innerHeight / 3 * 2,
-    nodeStrokeWidth: 3,
-    linkStrokeWidth: 1,
-    nodeStrength: -200,
-    nodeRadius: 4,
-  })
-  chart.tick();
-
-  document.getElementById("snapshots").appendChild(chart);
-
-}
+// let diffGraph;
+// function drawGraphDiff() {
+//   document.getElementById("diff-result").innerHTML = '';
+//
+//   const firstSnapshotIndex = +document.getElementById("diff-graph-1").value || 0;
+//   const secondSnapshotIndex = +document.getElementById("diff-graph-2").value || 1;
+//   const width = window.innerWidth / 4;
+//   const height = window.innerHeight /4 ;
+//   const snapshot0 = storedSnapshots[firstSnapshotIndex];
+//   const snapshot1 = storedSnapshots[secondSnapshotIndex];
+//
+//   // console.log(snapshot0, snapshot1)
+//
+//   if(!diffGraph) {
+//     diffGraph = ForceGraph({
+//       nodes: snapshot0.vertices,
+//       links: [ ...snapshot0.edges, ...snapshot1.edges],
+//       containerId: 'diff-result'
+//     }, {
+//       nodeId: d => d,
+//       nodeTitle: d => d,
+//       width,
+//       height,
+//       nodeStrokeWidth: 0,
+//       linkStrokeWidth: 1,
+//       nodeRadius: 4,
+//     })
+//   }
+//
+//   const {link} = diffGraph.update({
+//     links: [ ...snapshot0.edges, ...snapshot1.edges]
+//   });
+//
+//   link.style("stroke", d => {
+//     const firstHas = snapshot0.edges.find(edge => edge.source === d.source.id && edge.target === d.target.id);
+//     const secondHas = snapshot1.edges.find(edge => edge.source === d.source.id && edge.target === d.target.id);
+//
+//     if(firstHas && !secondHas) {
+//       return "red";
+//     }
+//     if(!firstHas && secondHas){
+//       return "green"
+//     }
+//     return "black"
+//   })
+//
+//   document.getElementById("diff-result").appendChild(diffGraph);
+// }
 
 function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
   let chart;
@@ -95,7 +120,7 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
 
   if (snapshots) {
     storedSnapshots = snapshots;
-    drawGraphDiff()
+    // drawGraphDiff()
   }
 
   generateVertexSnapshots();
@@ -106,6 +131,7 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
   chart = ForceGraph({
     nodes: snapshots[snapshotIndex].vertices,
     links: snapshots[snapshotIndex].edges,
+    containerId: 'scene'
   }, {
     nodeId: d => d,
     nodeTitle: d => d,
@@ -308,7 +334,7 @@ function drawAllVertexOriginatorStats(allVerticesData) {
   document.getElementById('linechart-all-vertices-broadcast-first').innerHTML = '';
   document.getElementById('linechart-all-vertices-unicast-first').innerHTML = '';
 
-  drawLineChart({
+  BarPlot({
     data: allVerticesData,
     containerId: 'linechart-all-vertices-broadcast',
     xAxis: 'originator',
@@ -316,7 +342,7 @@ function drawAllVertexOriginatorStats(allVerticesData) {
     title: 'All vertices broadcast'
   })
 
-  drawLineChart({
+  BarPlot({
     data: allVerticesData,
     containerId: 'linechart-all-vertices-unicast',
     xAxis: 'originator',
@@ -324,7 +350,7 @@ function drawAllVertexOriginatorStats(allVerticesData) {
     title: 'All vertices unicast'
   })
 
-  drawLineChart({
+  BarPlot({
     data: allVerticesData,
     containerId: 'linechart-all-vertices-broadcast-first',
     xAxis: 'originator',
@@ -332,7 +358,7 @@ function drawAllVertexOriginatorStats(allVerticesData) {
     title: 'All vertices broadcast with timer'
   })
 
-  drawLineChart({
+  BarPlot({
     data: allVerticesData,
     containerId: 'linechart-all-vertices-unicast-first',
     xAxis: 'originator',

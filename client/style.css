@@ -15,6 +15,18 @@ body {
     flex-basis: 0;
 }
 
+.bar-tooltip:hover {
+    opacity: 1;
+}
+.axis--x .tick text{
+    opacity: 0;
+}
+.axis--x .tick:nth-child(5n + 2) text{
+    opacity: 1;
+}
+.axis--x .tick:nth-child(5n + 2) line{
+    stroke-width: 1.5;
+}
 #scene, #snapshots {
     display: flex;
     justify-content: center;
@@ -242,6 +254,20 @@ body {
     grid-template-columns: auto auto;
 }
 
+.diff-container {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    justify-content: center;
+    align-items: center;
+}
+#diff-result {
+    width: 100%;
+    height: 400px;
+}
+#diff-result > svg {
+    width: 100%!important;
+    height: 100%!important;
+}
 .info-container .info {
     margin: 4px;
 }

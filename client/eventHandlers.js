@@ -44,3 +44,6 @@ document.getElementById('downloadInformed').onclick = () => {
 document.getElementById('generateFromAllVertices').onclick = () => {
   calculateRoundsFromAllVertices();
 }
+// document.getElementById('calculateDiff').onclick = () => {
+//   drawGraphDiff();
+// }
