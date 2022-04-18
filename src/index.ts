@@ -27,7 +27,6 @@ export function createSnapshots({
       case 'logn/n': p = () => Math.log(vertexCount) / vertexCount; break;
       case '18logn/n': p = () => 18 * Math.log(vertexCount) / vertexCount; break;
       case 'random': p = () => Math.random(); break;
-      break;
       default: p = probability ? () => probability : p; break;
     }
 

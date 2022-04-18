@@ -2,7 +2,7 @@
   "name": "dynamic-graph-generator",
   "version": "1.0.0",
   "description": "Random graph generator for small scale graphs",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "start": "ts-node index.ts",
     "start-server": "ts-node server.ts"

@@ -64,8 +64,8 @@ class Graph {
         if (!this.data[i][j]) continue;
 
         result.push({
-          source: i,
-          target: j,
+          s: i,
+          t: j,
         })
       }
     }

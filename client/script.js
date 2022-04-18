@@ -16,8 +16,8 @@ const distributionsData = {
 function calculateIsolationPercentage(graph) {
   const arr = new Array(graph.vertices.length).fill(0);
   for (let i = 0; i < graph.edges.length; i++) {
-    arr[graph.edges[i].source] = 1;
-    arr[graph.edges[i].target] = 1;
+    arr[graph.edges[i].s] = 1;
+    arr[graph.edges[i].t] = 1;
   }
 
   return 100 - arr.reduce((acc, item) => acc + item, 0) / arr.length * 100;
@@ -26,8 +26,8 @@ function calculateIsolationPercentage(graph) {
 function calculateDegrees(graph) {
   const arr = new Array(graph.vertices.length).fill(0).map((_, index) => ({ value: 0, index }));
   for (let i = 0; i < graph.edges.length; i++) {
-    arr[graph.edges[i].source].value++;
-    arr[graph.edges[i].target].value++;
+    arr[graph.edges[i].s].value++;
+    arr[graph.edges[i].t].value++;
   }
 
   return arr;
@@ -97,8 +97,8 @@ function setupTimeline(snapshots) {
 //   });
 //
 //   link.style("stroke", d => {
-//     const firstHas = snapshot0.edges.find(edge => edge.source === d.source.id && edge.target === d.target.id);
-//     const secondHas = snapshot1.edges.find(edge => edge.source === d.source.id && edge.target === d.target.id);
+//     const firstHas = snapshot0.edges.find(edge => edge.s === d.s.id && edge.t === d.t.id);
+//     const secondHas = snapshot1.edges.find(edge => edge.s === d.s.id && edge.t === d.t.id);
 //
 //     if(firstHas && !secondHas) {
 //       return "red";
@@ -130,7 +130,7 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
 
   chart = ForceGraph({
     nodes: snapshots[snapshotIndex].vertices,
-    links: snapshots[snapshotIndex].edges,
+    links: snapshots[snapshotIndex].edges.map(({s, t}) => ({source: s, target: t})),
     containerId: 'scene'
   }, {
     nodeId: d => d,
@@ -155,7 +155,7 @@ function drawGraph(newSnapshots, initialSnapshotIndex = 0) {
 
     vertices = vertexSnapshots[snapshotIndex];
     chart.update({
-      links: snapshots[snapshotIndex].edges,
+      links: snapshots[snapshotIndex].edges.map(({s, t}) => ({source: s, target: t})),
     });
 
     document.getElementById("snapshotId").innerHTML = `${snapshotIndex}`;
@@ -465,40 +465,40 @@ function generateVertexSnapshots(startIndex = 0) {
 
     snapshot.edges.forEach(edge => {
       if (
-        vertices[edge.source].hasBroadcastInfo &&
-        !vertices[edge.target].hasBroadcastInfo
+        vertices[edge.s].hasBroadcastInfo &&
+        !vertices[edge.t].hasBroadcastInfo
       ) {
-        infoQueue.push(edge.target);
+        infoQueue.push(edge.t);
       }
       if (
-        vertices[edge.target].hasBroadcastInfo &&
-        !vertices[edge.source].hasBroadcastInfo
+        vertices[edge.t].hasBroadcastInfo &&
+        !vertices[edge.s].hasBroadcastInfo
       ) {
-        infoQueue.push(edge.source);
+        infoQueue.push(edge.s);
       }
       if (
-        vertices[edge.target].hasUnicastInfo &&
-        !vertices[edge.source].hasUnicastInfo
+        vertices[edge.t].hasUnicastInfo &&
+        !vertices[edge.s].hasUnicastInfo
       ) {
-        if (!Object.values(infoMap).filter(value =>  value?.has(edge.source)).length) {
-          if(!infoMap[edge.target]){
-            infoMap[edge.target] = new Set();
+        if (!Object.values(infoMap).filter(value =>  value?.has(edge.s)).length) {
+          if(!infoMap[edge.t]){
+            infoMap[edge.t] = new Set();
           }
-          if(infoMap[edge.target].size < castIndex) {
-            infoMap[edge.target].add(edge.source);
+          if(infoMap[edge.t].size < castIndex) {
+            infoMap[edge.t].add(edge.s);
           }
         }
       }
       if (
-        vertices[edge.source].hasUnicastInfo &&
-        !vertices[edge.target].hasUnicastInfo
+        vertices[edge.s].hasUnicastInfo &&
+        !vertices[edge.t].hasUnicastInfo
       ) {
-        if (!Object.values(infoMap).filter(value => value.has(edge.target)).length) {
-          if(!infoMap[edge.source]){
-            infoMap[edge.source] = new Set();
+        if (!Object.values(infoMap).filter(value => value.has(edge.t)).length) {
+          if(!infoMap[edge.s]){
+            infoMap[edge.s] = new Set();
           }
-          if(infoMap[edge.source].size < castIndex) {
-            infoMap[edge.source].add(edge.target);
+          if(infoMap[edge.s].size < castIndex) {
+            infoMap[edge.s].add(edge.t);
           }
         }
       }
@@ -643,40 +643,40 @@ function calculateRoundsFromAllVertices() {
 
       snapshot.edges.forEach(edge => {
         if (
-          vertices[edge.source].hasBroadcastInfo &&
-          !vertices[edge.target].hasBroadcastInfo
+          vertices[edge.s].hasBroadcastInfo &&
+          !vertices[edge.t].hasBroadcastInfo
         ) {
-          infoQueue.push(edge.target);
+          infoQueue.push(edge.t);
         }
         if (
-          vertices[edge.target].hasBroadcastInfo &&
-          !vertices[edge.source].hasBroadcastInfo
+          vertices[edge.t].hasBroadcastInfo &&
+          !vertices[edge.s].hasBroadcastInfo
         ) {
-          infoQueue.push(edge.source);
+          infoQueue.push(edge.s);
         }
         if (
-          vertices[edge.target].hasUnicastInfo &&
-          !vertices[edge.source].hasUnicastInfo
+          vertices[edge.t].hasUnicastInfo &&
+          !vertices[edge.s].hasUnicastInfo
         ) {
-          if (!Object.values(infoMap).filter(value =>  value?.has(edge.source)).length) {
-            if(!infoMap[edge.target]){
-              infoMap[edge.target] = new Set();
+          if (!Object.values(infoMap).filter(value =>  value?.has(edge.s)).length) {
+            if(!infoMap[edge.t]){
+              infoMap[edge.t] = new Set();
             }
-            if(infoMap[edge.target].size < castIndex) {
-              infoMap[edge.target].add(edge.source);
+            if(infoMap[edge.t].size < castIndex) {
+              infoMap[edge.t].add(edge.s);
             }
           }
         }
         if (
-          vertices[edge.source].hasUnicastInfo &&
-          !vertices[edge.target].hasUnicastInfo
+          vertices[edge.s].hasUnicastInfo &&
+          !vertices[edge.t].hasUnicastInfo
         ) {
-          if (!Object.values(infoMap).filter(value => value.has(edge.target)).length) {
-            if(!infoMap[edge.source]){
-              infoMap[edge.source] = new Set();
+          if (!Object.values(infoMap).filter(value => value.has(edge.t)).length) {
+            if(!infoMap[edge.s]){
+              infoMap[edge.s] = new Set();
             }
-            if(infoMap[edge.source].size < castIndex) {
-              infoMap[edge.source].add(edge.target);
+            if(infoMap[edge.s].size < castIndex) {
+              infoMap[edge.s].add(edge.t);
             }
           }
         }
