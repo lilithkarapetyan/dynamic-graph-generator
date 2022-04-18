@@ -4,34 +4,12 @@ import path from "path";
 import { createSnapshots } from "../src";
 
 let csvStr = 'index,name,probability,k-cast,infoGivingTimeout,originator,broadcastVerticesPMF,broadcastVerticesCDF,unicastVerticesPMF,unicastVerticesCDF,broadcastVerticesAll,unicastVerticesAll\n';
-const distributionsData = {
-  info: [],
-  prevUnicastVertices: 0,
-  prevBroadcastVertices: 0,
-};
 
-const VERTEX_COUNT = 50;
-const SNAPSHOT_COUNT = 25;
-
-const { vertexCount, snapshotCount, probability } = {
-  vertexCount: VERTEX_COUNT, snapshotCount: SNAPSHOT_COUNT, probability: 0.005
-};
-
-const snapshotsData = createSnapshots({
-  vertexCount,
-  snapshotCount,
-  probability
-});
-
-const storedSnapshots = snapshotsData.snapshots;
-
-fs.writeFile(path.join('.', 'data', 'graphs', `${snapshotsData.details.name}.json`),  JSON.stringify(snapshotsData), (err) => {
-  console.log('done')
-})
-
-function generateVertexSnapshots({ originator, castIndex, maxInfoGivingTime }) {
+function generateVertexSnapshots({ distributionsData, snapshotsData, originator, castIndex, maxInfoGivingTime }) {
   let infoMap = {};
   let infoQueue = [];
+
+  const storedSnapshots = snapshotsData.snapshots;
 
   const infoSnapshots = storedSnapshots.map(snapshot => (
     snapshot.vertices.map((vertex, index) => ({
@@ -137,20 +115,46 @@ function generateVertexSnapshots({ originator, castIndex, maxInfoGivingTime }) {
   })
 }
 
-for(let t = 1; t < SNAPSHOT_COUNT; t++) {
-  for (let k = 1; k < VERTEX_COUNT / 10; k++) {
-    for (let i = 0; i < VERTEX_COUNT; i++) {
-      distributionsData.prevBroadcastVertices = 0;
-      distributionsData.prevUnicastVertices = 0;
-      generateVertexSnapshots({
-        originator: 0,
-        castIndex: k,
-        maxInfoGivingTime: t,
-      });
+const distributionsData = {
+  info: [],
+  prevUnicastVertices: 0,
+  prevBroadcastVertices: 0,
+};
+
+const VERTEX_COUNT = 100;
+const SNAPSHOT_COUNT = 50;
+
+const fileName = new Date().toLocaleString().replace(/\//g, ".");
+fs.writeFile(path.join('.', 'data', `data_${fileName}.csv`), csvStr + distributionsData.info.map(row => row.toString()).join('\n'), console.log);
+
+// v2 * snap * 10 * GRAPH_COUNT
+
+// 10 * 2 * 25 * 10 * 100 ...
+for(let p = 0.001; p <= 0.5; p *= 2) {
+  for(let g = 0; g < 2; g++) {
+    const snapshotsData = createSnapshots({
+      vertexCount: VERTEX_COUNT,
+      snapshotCount: SNAPSHOT_COUNT,
+      probability: p
+    });
+    fs.writeFile(path.join('.', 'data', 'graphs', `${snapshotsData.details.name}.json`),  JSON.stringify(snapshotsData), console.log)
+
+    for(let t = 2; t < SNAPSHOT_COUNT / 2; t++) {
+      for (let k = 1; k < VERTEX_COUNT / 10; k++) {
+        for (let i = 0; i < VERTEX_COUNT; i++) {
+          distributionsData.prevBroadcastVertices = 0;
+          distributionsData.prevUnicastVertices = 0;
+          generateVertexSnapshots({
+            distributionsData,
+            snapshotsData,
+            originator: i,
+            castIndex: k,
+            maxInfoGivingTime: t,
+          });
+        }
+      }
+      fs.appendFileSync(path.join('.', 'data', `data_${fileName}.csv`), distributionsData.info.map(row => row.toString()).join('\n') + '\n');
+      distributionsData.info = [];
     }
   }
 }
-
-fs.writeFile(path.join('.', 'data', 'hello.csv'), csvStr + distributionsData.info.map(row => row.toString()).join('\n'), () => {
-  console.log('done')
-});
