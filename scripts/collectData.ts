@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from "path";
 import { createSnapshots } from "../src";
 
-let csvStr = 'index,name,probability,k-cast,infoGivingTimeout,originator,broadcastVerticesPMF,broadcastVerticesCDF,unicastVerticesPMF,unicastVerticesCDF,broadcastVerticesAll,unicastVerticesAll\n';
+let csvStr = 'index,name,probability,kcast,infoGivingTimeout,originator,broadcastVerticesPMF,broadcastVerticesCDF,unicastVerticesPMF,unicastVerticesCDF,broadcastVerticesAll,unicastVerticesAll\n';
 
 function generateVertexSnapshots({ distributionsData, snapshotsData, originator, castIndex, maxInfoGivingTime }) {
   let infoMap = {};
