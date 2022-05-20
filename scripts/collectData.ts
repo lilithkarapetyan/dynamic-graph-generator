@@ -40,6 +40,9 @@ function generateVertexSnapshots({ distributionsData, snapshotsData, originator,
         }
       })
     }
+    else{
+      return;
+    }
 
     snapshot.edges.forEach(edge => {
       if (
@@ -127,9 +130,7 @@ const SNAPSHOT_COUNT = 50;
 const fileName = new Date().toLocaleString().replace(/\//g, ".");
 fs.writeFile(path.join('.', 'data', `data_${fileName}.csv`), csvStr + distributionsData.info.map(row => row.toString()).join('\n'), console.log);
 
-// v2 * snap * 10 * GRAPH_COUNT
 
-// 10 * 2 * 25 * 10 * 100 ...
 for(let p = 0.001; p <= 0.5; p *= 2) {
   for(let g = 0; g < 2; g++) {
     const snapshotsData = createSnapshots({
